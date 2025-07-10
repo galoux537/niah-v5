@@ -21,7 +21,7 @@
     "node-fetch": "^2.7.0",
     "openai": "^4.28.0",
     "uuid": "^9.0.1",
-    "music-metadata": "^7.15.4"
+    "music-metadata": "^11.6.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.17"
