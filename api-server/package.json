@@ -1,0 +1,38 @@
+{
+  "name": "niah-api-server",
+  "version": "1.0.0",
+  "description": "Servidor de API para análise automatizada de ligações do NIAH!",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "form-data": "^4.0.0",
+    "formidable": "^3.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.28.0",
+    "uuid": "^9.0.1",
+    "music-metadata": "^7.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17"
+  },
+  "keywords": [
+    "api",
+    "speech-to-text",
+    "ai",
+    "call-analysis",
+    "supabase"
+  ],
+  "author": "NIAH Team",
+  "license": "MIT"
+}

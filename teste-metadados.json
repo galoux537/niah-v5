@@ -1,0 +1,37 @@
+{
+  "name": "Vanessa",
+  "email": "vane@gmail.com",
+  "phone": "45988776548",
+  "company": "NIAH!",
+  "department": "Produto",
+  "callType": "Testessss",
+  "priority": "médiabaixa",
+  "agent": "João Silva",
+  "campaign": "Campanha Produto Q1 2025",
+  "webhook_call_completed": {
+    "event": "call_completed",
+    "batch_id": "batch_1751381431041",
+    "company_id": 2,
+    "call_index": 1,
+    "total_calls": 1,
+    "file_id": "file_0_1751381431041",
+    "file_name": "50b3dedc-5341-11f0-b89e-798122324947_1792a895-2d01-4bd1-a191-4a1e7d9e6cd2.ogg",
+    "file_size": 948916,
+    "status": "success",
+    "audio_storage": {
+      "storage_url": "https://iyqrjgwqjmsnhtxbywme.supabase.co/storage/v1/object/public/call-audios/0c2ce39e-0907-475a-b40d-bd3ca27384cf/cbab4acd-5772-410e-bacb-100bf9dd73b0_2025_07_01T14_50_36_248Z.ogg",
+      "storage_path": "0c2ce39e-0907-475a-b40d-bd3ca27384cf/cbab4acd-5772-410e-bacb-100bf9dd73b0_2025_07_01T14_50_36_248Z.ogg",
+      "public_url": "https://iyqrjgwqjmsnhtxbywme.supabase.co/storage/v1/object/public/call-audios/0c2ce39e-0907-475a-b40d-bd3ca27384cf/cbab4acd-5772-410e-bacb-100bf9dd73b0_2025_07_01T14_50_36_248Z.ogg",
+      "file_name": "50b3dedc-5341-11f0-b89e-798122324947_1792a895-2d01-4bd1-a191-4a1e7d9e6cd2.ogg",
+      "file_size": 948916
+    }
+  },
+  "campos_esperados_no_banco": {
+    "audio_storage_url": "url interna do storage",
+    "audio_storage_path": "caminho no bucket", 
+    "audio_file_name": "nome original",
+    "audio_file_size": "tamanho em bytes",
+    "audio_public_url": "url pública",
+    "has_audio": "true/false"
+  }
+} 
