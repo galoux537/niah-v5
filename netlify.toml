@@ -1,0 +1,17 @@
+[[redirects]]
+  from = "/api/v1/*"
+  to = "https://niah-api.onrender.com/api/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/health"
+  to = "https://niah-api.onrender.com/health"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://niah-api.onrender.com/uploads/:splat"
+  status = 200
+  force = true 
