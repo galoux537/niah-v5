@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+// URL base da API (Render ou relativa em dev)
+const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 
 // 🎵 Hook para gerenciar áudios armazenados no banco de dados
 export function useAudio(callId: string | null) {
@@ -75,7 +77,7 @@ export function useAudio(callId: string | null) {
         setError(null);
         
         // Buscar informações do áudio
-        const response = await fetch(`http://localhost:3001/api/v1/audio/${callId}/info`);
+        const response = await fetch(`${API_BASE}/api/v1/audio/${callId}/info`);
         
         if (!response.ok) {
           throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -86,7 +88,7 @@ export function useAudio(callId: string | null) {
         
         // Se tem áudio, configurar o player
         if (info.has_audio && audioRef.current) {
-          audioRef.current.src = `http://localhost:3001/api/v1/audio/${callId}`;
+          audioRef.current.src = `${API_BASE}/api/v1/audio/${callId}`;
         } else {
           setError('📭 Áudio não disponível para esta ligação');
         }

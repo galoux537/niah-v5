@@ -23,7 +23,7 @@ interface AuthResponse {
 class AuthManager {
   private token: string | null = null;
   private user: User | null = null;
-  private apiBaseUrl = 'http://localhost:3001/api/v1';
+  private apiBaseUrl = `${(import.meta as any).env.VITE_API_URL || ''}/api/v1`;
   private enableJWT = true; // ✅ REABILITAR JWT - API server está rodando!
 
   constructor() {

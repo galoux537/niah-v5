@@ -6,6 +6,8 @@ import { Card } from './ui/card';
 import { supabase } from '../src/lib/supabase';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+// URL base da API (Render ou relativa em dev)
+const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 
 // Nova documentação interativa da API
 const BatchAnalysisDocumentation: React.FC = () => {
@@ -31,7 +33,7 @@ const BatchAnalysisDocumentation: React.FC = () => {
   const audioInput0Ref = useRef<HTMLInputElement | null>(null);
   const audioInput1Ref = useRef<HTMLInputElement | null>(null);
   
-  const batchApiUrl = "http://localhost:3001/api/v1/analyze-batch-proxy";
+  const batchApiUrl = `${API_BASE}/api/v1/analyze-batch-proxy`;
   
   const [userToken, setUserToken] = useState<string>('');
   

@@ -21,6 +21,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../src/lib/supabase';
 import { authManager } from '../src/lib/auth';
+// URL base da API (Render ou relativa em dev)
+const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 
 
 interface BatchFile {
@@ -230,7 +232,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
     try {
       console.log(`🏢 Carregando jobs ativos para empresa: ${company.name} (${company.id})`);
       
-      const response = await fetch(`http://localhost:3001/api/v1/batch-jobs?company_id=${encodeURIComponent(company.id)}`);
+      const response = await fetch(`${API_BASE}/api/v1/batch-jobs?company_id=${encodeURIComponent(company.id)}`);
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ ${data.jobs?.length || 0} jobs carregados para empresa ${company.name}`);
@@ -256,7 +258,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
     try {
       console.log(`🔍 Carregando detalhes do job ${jobId} para empresa ${company.name}`);
       
-      const response = await fetch(`http://localhost:3001/api/v1/analyze-batch?jobId=${jobId}&company_id=${encodeURIComponent(company.id)}`);
+      const response = await fetch(`${API_BASE}/api/v1/analyze-batch?jobId=${jobId}&company_id=${encodeURIComponent(company.id)}`);
       if (response.ok) {
         const jobDetails = await response.json();
         setSelectedJob(jobDetails);
@@ -438,7 +440,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
 
       // Verificar se o servidor local está rodando
       try {
-        const healthCheck = await fetch('http://localhost:3001/health');
+        const healthCheck = await fetch(`${API_BASE}/health`);
         if (!healthCheck.ok) {
           throw new Error('Servidor API não está respondendo');
         }
@@ -451,7 +453,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
       
       // NOVA SOLUÇÃO: Usar proxy local com autenticação JWT
       console.log('🔐 Enviando com autenticação JWT...');
-      const response = await authManager.authenticatedFetch('http://localhost:3001/api/v1/analyze-batch-proxy', {
+      const response = await authManager.authenticatedFetch(`${API_BASE}/api/v1/analyze-batch-proxy`, {
         method: 'POST',
         body: formData
       });
