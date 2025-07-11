@@ -105,6 +105,17 @@ const BatchAnalysisDocumentation: React.FC = () => {
     return `${token.slice(0, 8)}${'*'.repeat(12)}${token.slice(-8)}`;
   };
   
+  // Função para copiar o token completo (incluindo "Bearer ")
+  const copyTokenWithBearer = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(`Bearer ${token}`);
+      setCopiedText('token_copied');
+      setTimeout(() => setCopiedText(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy token:', err);
+    }
+  };
+  
   const handleInputChange = (field: string, value: string | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -113,10 +124,14 @@ const BatchAnalysisDocumentation: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: file }));
   };
   
-  const generateCodeSample = () => {
+  // Função para gerar amostras de código com token mascarado para exibição
+  const generateCodeSample = (forCopy = false) => {
+    // Use token completo para cópia, mascarado para exibição
+    const displayToken = forCopy ? userToken : getDisplayToken(userToken);
+    
     const samples = {
       curl: `curl -X POST "${batchApiUrl}" \\
-  -H "Authorization: Bearer ${userToken}" \\
+  -H "Authorization: Bearer ${displayToken}" \\
   -F 'batch_name=${formData.batch_name}' \\
   -F 'criteria=${formData.criteria}' \\
   -F 'webhook=${formData.webhook}' \\${formData.audioFiles_0 ? `
@@ -130,7 +145,7 @@ const BatchAnalysisDocumentation: React.FC = () => {
       python: `import requests
 
 url = "${batchApiUrl}"
-headers = {"Authorization": "Bearer ${userToken}"}
+headers = {"Authorization": "Bearer ${displayToken}"}
 
 files = {${formData.audioFiles_0 ? `
     "audioFiles_0": open("${formData.audioFiles_0.name}", "rb"),` : ''}${formData.audioFiles_1 ? `
@@ -165,7 +180,7 @@ formData.append('metadata_1', '${formData.metadata_1}');` : ''}
 fetch('${batchApiUrl}', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer ${userToken}'
+    'Authorization': 'Bearer ${displayToken}'
   },
   body: formData
 }).then(r => r.json()).then(console.log);`,
@@ -174,7 +189,7 @@ fetch('${batchApiUrl}', {
 
 curl_setopt($ch, CURLOPT_URL, "${batchApiUrl}");
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-  'Authorization: Bearer ${userToken}'
+  'Authorization: Bearer ${displayToken}'
 ]);
 
 $postFields = [
@@ -278,9 +293,9 @@ echo $response;`
                 <Copy className="w-5 h-5" />
               </button>
             </div>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 px-6">
@@ -293,8 +308,20 @@ echo $response;`
               <div className="w-40 flex"><span className="inline-flex h-7 px-2 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">token_user</span></div>
               <div className="flex-1 h-10 px-4 bg-gray-50 border border-[#E1E9F4] rounded-[10px] flex items-center justify-between">
                 <code className="flex-1 text-slate-600 text-base truncate">{getDisplayToken(userToken)}</code>
-                <button onClick={() => handleCopy(`Bearer ${userToken}`)} className="p-1 text-slate-400 hover:text-slate-600">
-                  <Copy className="w-5 h-5" />
+                <button 
+                  onClick={() => copyTokenWithBearer(userToken)} 
+                  className={`p-1 transition-colors ${
+                    copiedText === 'token_copied' 
+                      ? 'text-green-600' 
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                  title="Copiar token completo com Bearer"
+                >
+                  {copiedText === 'token_copied' ? (
+                    <CheckCircle className="w-5 h-5" />
+                  ) : (
+                    <Copy className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -323,9 +350,9 @@ echo $response;`
                 <div className="flex items-start gap-4">
                   <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">criteria*</span></div>
                   <div className="relative flex-1" style={{height:'31.5px',minHeight:'31.5px'}}>
-                    <Textarea
-                      value={formData.criteria}
-                      onChange={(e) => handleInputChange('criteria', e.target.value)}
+                  <Textarea
+                    value={formData.criteria}
+                    onChange={(e) => handleInputChange('criteria', e.target.value)}
                       placeholder="{...}"
                       style={{height:'31.5px',minHeight:'31.5px',whiteSpace:'nowrap',overflow:'hidden'}}
                       onFocus={(e)=>{
@@ -346,7 +373,7 @@ echo $response;`
                         t.style.overflow='hidden';
                       }}
                       className="w-full resize-none bg-white rounded-[10px]"
-                    />
+                  />
                   </div>
                 </div>
                 
@@ -372,10 +399,10 @@ echo $response;`
                         <input
                           id="file0"
                           ref={audioInput0Ref}
-                          type="file"
-                          accept="audio/*"
+                        type="file"
+                        accept="audio/*"
                           className="hidden"
-                          onChange={(e) => handleFileUpload('audioFiles_0', e.target.files?.[0] || null)}
+                        onChange={(e) => handleFileUpload('audioFiles_0', e.target.files?.[0] || null)}
                         />
                         {formData.audioFiles_0 ? (
                           <div
@@ -422,9 +449,9 @@ echo $response;`
                     <div className="flex items-start gap-4">
                       <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">metadata_0</span></div>
                       <div className="relative flex-1" style={{height:'31.5px',minHeight:'31.5px'}}>
-                        <Textarea
-                          value={formData.metadata_0}
-                          onChange={(e) => handleInputChange('metadata_0', e.target.value)}
+                      <Textarea
+                        value={formData.metadata_0}
+                        onChange={(e) => handleInputChange('metadata_0', e.target.value)}
                           placeholder="{...}"
                           style={{height:'31.5px',minHeight:'31.5px',whiteSpace:'nowrap',overflow:'hidden'}}
                           onFocus={(e)=>{
@@ -445,7 +472,7 @@ echo $response;`
                             t.style.overflow='hidden';
                           }}
                           className="w-full resize-none bg-white rounded-[10px]"
-                        />
+                      />
                       </div>
                     </div>
                   </div>
@@ -462,10 +489,10 @@ echo $response;`
                         <input
                           id="file1"
                           ref={audioInput1Ref}
-                          type="file"
-                          accept="audio/*"
+                        type="file"
+                        accept="audio/*"
                           className="hidden"
-                          onChange={(e) => handleFileUpload('audioFiles_1', e.target.files?.[0] || null)}
+                        onChange={(e) => handleFileUpload('audioFiles_1', e.target.files?.[0] || null)}
                         />
                         {formData.audioFiles_1 ? (
                           <div
@@ -512,9 +539,9 @@ echo $response;`
                     <div className="flex items-start gap-4">
                       <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">metadata_1</span></div>
                       <div className="relative flex-1" style={{height:'31.5px',minHeight:'31.5px'}}>
-                        <Textarea
-                          value={formData.metadata_1}
-                          onChange={(e) => handleInputChange('metadata_1', e.target.value)}
+                      <Textarea
+                        value={formData.metadata_1}
+                        onChange={(e) => handleInputChange('metadata_1', e.target.value)}
                           placeholder="{...}"
                           style={{height:'31.5px',minHeight:'31.5px',whiteSpace:'nowrap',overflow:'hidden'}}
                           onFocus={(e)=>{
@@ -535,7 +562,7 @@ echo $response;`
                             t.style.overflow='hidden';
                           }}
                           className="w-full resize-none bg-white rounded-[10px]"
-                        />
+                      />
                       </div>
                     </div>
                   </div>
@@ -580,15 +607,24 @@ echo $response;`
               
               <div className="relative">
                 <pre className="bg-[#1E1F25] text-[#69DE74] p-3 sm:p-4 rounded-lg text-xs sm:text-sm font-mono overflow-x-auto whitespace-pre-wrap break-words">
-                  {generateCodeSample()}
+                  {generateCodeSample(false)}
                 </pre>
                 <Button
-                  onClick={() => handleCopy(generateCodeSample())}
+                  onClick={() => handleCopy(generateCodeSample(true))}
                   variant="outline"
                   size="icon"
-                  className="absolute top-2 right-2 bg-white/10 border-white/20 text-white hover:bg-white/20 p-1"
+                  className={`absolute top-2 right-2 border-white/20 text-white hover:bg-white/20 p-1 transition-colors ${
+                    copiedText === 'copied' 
+                      ? 'bg-green-600/20 text-green-300' 
+                      : 'bg-white/10'
+                  }`}
+                  title="Copiar código completo com token real"
                 >
-                  <Copy className="w-4 h-4" />
+                  {copiedText === 'copied' ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -668,15 +704,15 @@ echo $response;`
                     <pre className="text-[#69DE74] text-xs sm:text-sm font-mono whitespace-pre-wrap break-words">
                       {JSON.stringify(apiResponse.data, null, 2)}
                     </pre>
-                  </div>
                 </div>
-              </Card>
+              </div>
+            </Card>
             </>
           )}
+              </div>
+            </div>
         </div>
       </div>
-    </div>
-    </div>
     </div>
   );
 };
