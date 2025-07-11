@@ -1102,12 +1102,8 @@ async function sendWebhook(url, data) {
 async function storeWebhookData(webhookData) {
   try {
     const axios = require('axios');
-    
-    // Usar URL relativa para funcionar em produção e desenvolvimento
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://niah-v5.onrender.com' 
-      : 'http://localhost:3001';
-    
+    // Detecta ambiente de produção na Render
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || 'http://localhost:3001';
     // Enviar para nosso endpoint interno de armazenamento
     const response = await axios.post(`${baseUrl}/api/v1/storage/store-webhook`, webhookData, {
       headers: {
@@ -1115,13 +1111,11 @@ async function storeWebhookData(webhookData) {
       },
       timeout: 5000 // 5 segundos timeout
     });
-    
     if (response.status >= 200 && response.status < 300) {
       console.log(`💾 Dados armazenados no banco: ${webhookData.event}`);
     } else {
       console.warn(`⚠️ Falha ao armazenar no banco: ${response.status}`);
     }
-    
   } catch (error) {
     console.error('❌ Erro ao armazenar no banco:', error.message);
     // Não quebrar o fluxo se houver erro no armazenamento
