@@ -1103,8 +1103,13 @@ async function storeWebhookData(webhookData) {
   try {
     const axios = require('axios');
     
+    // Usar URL relativa para funcionar em produção e desenvolvimento
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://niah-v5.onrender.com' 
+      : 'http://localhost:3001';
+    
     // Enviar para nosso endpoint interno de armazenamento
-    const response = await axios.post('http://localhost:3001/api/v1/storage/store-webhook', webhookData, {
+    const response = await axios.post(`${baseUrl}/api/v1/storage/store-webhook`, webhookData, {
       headers: {
         'Content-Type': 'application/json',
       },

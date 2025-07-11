@@ -493,24 +493,84 @@ async function updateEvaluationListStats(evaluationListId) {
 
 router.get('/test', async (req, res) => {
   try {
+    console.log('🧪 Testando conexão com Supabase...');
+    
     // Testar conexão com Supabase
-    const { data, error } = await supabase
+    const { data: companies, error: companiesError } = await supabase
       .from('companies')
       .select('id, name, display_id')
       .limit(5);
     
-    if (error) {
-      throw new Error(`Erro na conexão: ${error.message}`);
+    if (companiesError) {
+      throw new Error(`Erro na conexão com companies: ${companiesError.message}`);
+    }
+    
+    // Testar estrutura da tabela evaluation_lists
+    const { data: evaluationLists, error: evalError } = await supabase
+      .from('evaluation_lists')
+      .select('id, name, batch_id, status')
+      .limit(5);
+    
+    if (evalError) {
+      console.warn(`⚠️ Erro ao acessar evaluation_lists: ${evalError.message}`);
+    }
+    
+    // Testar estrutura da tabela calls
+    const { data: calls, error: callsError } = await supabase
+      .from('calls')
+      .select('id, file_name, batch_id, status')
+      .limit(5);
+    
+    if (callsError) {
+      console.warn(`⚠️ Erro ao acessar calls: ${callsError.message}`);
+    }
+    
+    // Testar inserção de dados de exemplo
+    const testBatchId = `test_${Date.now()}`;
+    const testCompanyId = companies[0]?.id;
+    
+    if (testCompanyId) {
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from('evaluation_lists')
+          .insert({
+            company_id: testCompanyId,
+            name: 'Teste de Conexão',
+            description: 'Teste automático do sistema',
+            batch_id: testBatchId,
+            status: 'test',
+            files_count: 1,
+            created_at: new Date()
+          });
+        
+        if (insertError) {
+          console.warn(`⚠️ Erro ao inserir teste: ${insertError.message}`);
+        } else {
+          console.log('✅ Inserção de teste bem-sucedida');
+          
+          // Limpar dados de teste
+          await supabase
+            .from('evaluation_lists')
+            .delete()
+            .eq('batch_id', testBatchId);
+        }
+      } catch (testError) {
+        console.warn(`⚠️ Erro no teste de inserção: ${testError.message}`);
+      }
     }
     
     res.json({
       success: true,
       message: 'Webhook storage funcionando!',
-      companies: data,
+      companies: companies,
+      evaluation_lists_count: evaluationLists?.length || 0,
+      calls_count: calls?.length || 0,
+      test_company_id: testCompanyId,
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
+    console.error('❌ Erro no teste:', error);
     res.status(500).json({
       success: false,
       error: error.message,
