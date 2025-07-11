@@ -1,16 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Copy, Webhook, BarChart3, CheckCircle, XCircle, X, Upload, Activity, Globe, Settings, Zap, Target, Shield, AlertCircle, Code } from 'lucide-react';
+import { Copy, Webhook, BarChart3, CheckCircle, XCircle, X, Upload, Activity, Globe, Settings, Zap, Target, Shield, AlertCircle, Code, ChevronDown } from 'lucide-react';
 import { BatchAnalysisPage } from './BatchAnalysisPage';
 import { Card } from './ui/card';
 import { supabase } from '../src/lib/supabase';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { useAuth } from '../contexts/AuthContext';
 // URL base da API (Render ou relativa em dev)
 const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 
+// Interface para critérios
+interface CriteriaOption {
+  id: string;
+  name: string;
+  sub_criteria: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
+}
+
 // Nova documentação interativa da API
 const BatchAnalysisDocumentation: React.FC = () => {
+  const { company } = useAuth();
+  
   const [formData, setFormData] = useState({
     batch_name: 'NOME_DO_LOTE_AQUI',
     criteria: '{"criteria_name":"critério 4","criteriaId":"e270f185-0e87-48a5-8c12-e2cd526fe041"}',
@@ -28,6 +42,12 @@ const BatchAnalysisDocumentation: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [exampleTab, setExampleTab] = useState<'success' | 'error400' | 'error404'>('success');
+  
+  // Estados para critérios
+  const [availableCriteria, setAvailableCriteria] = useState<CriteriaOption[]>([]);
+  const [selectedCriteriaId, setSelectedCriteriaId] = useState<string>('');
+  const [isLoadingCriteria, setIsLoadingCriteria] = useState(false);
+  const [showCriteriaDropdown, setShowCriteriaDropdown] = useState(false);
 
   // refs para inputs de arquivo (áudio)
   const audioInput0Ref = useRef<HTMLInputElement | null>(null);
@@ -37,6 +57,64 @@ const BatchAnalysisDocumentation: React.FC = () => {
   
   const [userToken, setUserToken] = useState<string>('');
   
+  // Carregar critérios da empresa
+  const loadCriteria = async () => {
+    if (!company) {
+      console.log('🔍 Company não encontrada, não carregando critérios');
+      return;
+    }
+    
+    console.log('🔍 Carregando critérios para empresa:', company.id, company.name);
+    setIsLoadingCriteria(true);
+
+    try {
+      // Buscar critérios da empresa
+      const { data: criteriaData, error: criteriaError } = await supabase
+        .from('criteria')
+        .select('id, name')
+        .eq('company_id', company.id);
+
+      if (criteriaError) {
+        console.error('❌ Erro ao carregar critérios:', criteriaError);
+        return;
+      }
+
+      if (criteriaData && criteriaData.length > 0) {
+        console.log(`✅ Encontrados ${criteriaData.length} critérios`);
+        
+        // Para cada critério, buscar seus subcritérios
+        const criteriaWithSubCriteria: CriteriaOption[] = await Promise.all(
+          criteriaData.map(async (criterion) => {
+            const { data: subCriteriaData, error: subCriteriaError } = await supabase
+              .from('sub_criteria')
+              .select('id, name, description')
+              .eq('criteria_id', criterion.id);
+
+            if (subCriteriaError) {
+              console.error(`❌ Erro ao carregar subcritérios para ${criterion.name}:`, subCriteriaError);
+              return { ...criterion, sub_criteria: [] };
+            }
+
+            return {
+              ...criterion,
+              sub_criteria: subCriteriaData || []
+            };
+          })
+        );
+
+        console.log('✅ Critérios com subcritérios carregados:', criteriaWithSubCriteria);
+        setAvailableCriteria(criteriaWithSubCriteria);
+      } else {
+        console.log('⚠️ Nenhum critério encontrado para a empresa');
+        setAvailableCriteria([]);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar critérios:', error);
+    } finally {
+      setIsLoadingCriteria(false);
+    }
+  };
+
   // Obter token do usuário logado
   useEffect(() => {
     const getToken = () => {
@@ -97,6 +175,28 @@ const BatchAnalysisDocumentation: React.FC = () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+
+  // Carregar critérios quando a empresa estiver disponível
+  useEffect(() => {
+    if (company) {
+      loadCriteria();
+    }
+  }, [company]);
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.criteria-dropdown')) {
+        setShowCriteriaDropdown(false);
+      }
+    };
+
+    if (showCriteriaDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCriteriaDropdown]);
   
   // Função para mascarar token apenas no display
   const getDisplayToken = (token: string) => {
@@ -115,6 +215,38 @@ const BatchAnalysisDocumentation: React.FC = () => {
       console.error('Failed to copy token:', err);
     }
   };
+
+  // Função para mascarar ID do critério
+  const getDisplayCriteriaId = (id: string) => {
+    if (!id) return 'Selecione um critério';
+    if (id.length < 10) return id;
+    return `${id.slice(0, 8)}${'*'.repeat(8)}${id.slice(-8)}`;
+  };
+
+  // Função para copiar ID do critério
+  const copyCriteriaId = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopiedText('criteria_id_copied');
+      setTimeout(() => setCopiedText(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy criteria ID:', err);
+    }
+  };
+
+  // Função para selecionar critério
+  const handleCriteriaSelect = (criteriaId: string) => {
+    setSelectedCriteriaId(criteriaId);
+    setShowCriteriaDropdown(false);
+    
+    // Encontrar o critério selecionado
+    const selectedCriteria = availableCriteria.find(c => c.id === criteriaId);
+    if (selectedCriteria) {
+      // Atualizar o campo criteria com o formato esperado pela API
+      const criteriaValue = `{"criteria_name":"${selectedCriteria.name}","criteriaId":"${selectedCriteria.id}"}`;
+      setFormData(prev => ({ ...prev, criteria: criteriaValue }));
+    }
+  };
   
   const handleInputChange = (field: string, value: string | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -124,16 +256,31 @@ const BatchAnalysisDocumentation: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: file }));
   };
   
-  // Função para gerar amostras de código com token mascarado para exibição
+  // Função para gerar amostras de código com token e criteriaId mascarados para exibição
   const generateCodeSample = (forCopy = false) => {
     // Use token completo para cópia, mascarado para exibição
     const displayToken = forCopy ? userToken : getDisplayToken(userToken);
+    
+    // Mascarar criteriaId no JSON do campo criteria
+    let displayCriteria = formData.criteria;
+    if (!forCopy && selectedCriteriaId) {
+      try {
+        const criteriaObj = JSON.parse(formData.criteria);
+        if (criteriaObj.criteriaId) {
+          criteriaObj.criteriaId = getDisplayCriteriaId(criteriaObj.criteriaId);
+          displayCriteria = JSON.stringify(criteriaObj);
+        }
+      } catch (e) {
+        // Se não conseguir parsear, usar o valor original
+        displayCriteria = formData.criteria;
+      }
+    }
     
     const samples = {
       curl: `curl -X POST "${batchApiUrl}" \\
   -H "Authorization: Bearer ${displayToken}" \\
   -F 'batch_name=${formData.batch_name}' \\
-  -F 'criteria=${formData.criteria}' \\
+  -F 'criteria=${displayCriteria}' \\
   -F 'webhook=${formData.webhook}' \\${formData.audioFiles_0 ? `
   -F "audioFiles_0=@${formData.audioFiles_0.name}" \\` : ''}
   -F 'phone_number_0=${formData.phone_number_0}' \\
@@ -154,7 +301,7 @@ files = {${formData.audioFiles_0 ? `
 
 data = {
     "batch_name": "${formData.batch_name}",
-    "criteria": "${formData.criteria}",
+    "criteria": "${displayCriteria}",
     "webhook": "${formData.webhook}",
     "phone_number_0": "${formData.phone_number_0}",
     "metadata_0": "${formData.metadata_0}"${formData.audioFiles_1 ? `,
@@ -168,7 +315,7 @@ print(response.json())`,
       javascript: `const formData = new FormData();
 
 formData.append('batch_name', '${formData.batch_name}');
-formData.append('criteria', '${formData.criteria}');
+formData.append('criteria', '${displayCriteria}');
 formData.append('webhook', '${formData.webhook}');${formData.audioFiles_0 ? `
 formData.append('audioFiles_0', document.querySelector('#file0').files[0]);` : ''}
 formData.append('phone_number_0', '${formData.phone_number_0}');
@@ -194,7 +341,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 
 $postFields = [
   'batch_name' => '${formData.batch_name}',
-  'criteria' => '${formData.criteria}',
+  'criteria' => '${displayCriteria}',
   'webhook' => '${formData.webhook}',${formData.audioFiles_0 ? `
   'audioFiles_0' => new CURLFile('${formData.audioFiles_0.name}'),` : ''}
   'phone_number_0' => '${formData.phone_number_0}',
@@ -346,34 +493,77 @@ echo $response;`
                   />
                 </div>
                 
-                {/* criteria */}
-                <div className="flex items-start gap-4">
+                {/* criteria - dividido em dois campos */}
+                <div className="flex items-center gap-4">
                   <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">criteria*</span></div>
-                  <div className="relative flex-1" style={{height:'31.5px',minHeight:'31.5px'}}>
-                  <Textarea
-                    value={formData.criteria}
-                    onChange={(e) => handleInputChange('criteria', e.target.value)}
-                      placeholder="{...}"
-                      style={{height:'31.5px',minHeight:'31.5px',whiteSpace:'nowrap',overflow:'hidden'}}
-                      onFocus={(e)=>{
-                        const t=e.currentTarget;
-                        t.style.position='absolute';
-                        t.style.zIndex='50';
-                        t.style.left='0';
-                        t.style.right='0';
-                        t.style.height='150px';
-                        t.style.whiteSpace='pre-wrap';
-                        t.style.overflow='auto';
-                      }}
-                      onBlur={(e)=>{
-                        const t=e.currentTarget;
-                        t.style.position='static';
-                        t.style.height='31.5px';
-                        t.style.whiteSpace='nowrap';
-                        t.style.overflow='hidden';
-                      }}
-                      className="w-full resize-none bg-white rounded-[10px]"
-                  />
+                  <div className="flex-1 flex gap-2">
+                    {/* Campo 1: Select de critérios */}
+                    <div className="relative flex-1 criteria-dropdown">
+                      <button
+                        type="button"
+                        onClick={() => setShowCriteriaDropdown(!showCriteriaDropdown)}
+                        className="w-full h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px] flex items-center justify-between text-left"
+                        disabled={isLoadingCriteria}
+                      >
+                        <span className="truncate text-sm">
+                          {isLoadingCriteria 
+                            ? 'Carregando critérios...' 
+                            : selectedCriteriaId 
+                              ? availableCriteria.find(c => c.id === selectedCriteriaId)?.name || 'Critério selecionado'
+                              : 'Selecionar critério'
+                          }
+                        </span>
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      </button>
+                      
+                      {/* Dropdown */}
+                      {showCriteriaDropdown && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E1E9F4] rounded-[10px] shadow-lg z-50 max-h-48 overflow-y-auto">
+                          {availableCriteria.length === 0 ? (
+                            <div className="p-3 text-sm text-gray-500">
+                              {isLoadingCriteria ? 'Carregando...' : 'Nenhum critério encontrado'}
+                            </div>
+                          ) : (
+                            availableCriteria.map((criteria) => (
+                              <button
+                                key={criteria.id}
+                                type="button"
+                                onClick={() => handleCriteriaSelect(criteria.id)}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex flex-col"
+                              >
+                                <span className="font-medium">{criteria.name}</span>
+                                <span className="text-xs text-gray-500">
+                                  {criteria.sub_criteria.length} subcritério(s)
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Campo 2: ID mascarado */}
+                    <div className="flex-1 h-10 px-3 bg-gray-50 border border-[#E1E9F4] rounded-[10px] flex items-center justify-between">
+                      <code className="flex-1 text-slate-600 text-sm truncate">
+                        {getDisplayCriteriaId(selectedCriteriaId)}
+                      </code>
+                      <button 
+                        onClick={() => selectedCriteriaId && copyCriteriaId(selectedCriteriaId)} 
+                        className={`p-1 transition-colors ${
+                          copiedText === 'criteria_id_copied' 
+                            ? 'text-green-600' 
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                        title="Copiar ID do critério"
+                        disabled={!selectedCriteriaId}
+                      >
+                        {copiedText === 'criteria_id_copied' ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
