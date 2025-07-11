@@ -822,7 +822,7 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
           <div className="fixed inset-0 bg-black/20 z-30" onClick={() => setIsSheetOpen(false)} />
           
           {/* Modal */}
-          <div className="fixed right-0 top-14 bottom-0 w-[520px] bg-[#f9fafc] border-l border-[#e1e9f4] shadow-lg z-40">
+          <div className="fixed right-0 top-11 bottom-0 w-[520px] bg-[#f9fafc] border-l border-[#e1e9f4] shadow-lg z-40">
             <div className="h-full flex flex-col p-6 overflow-y-auto">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
@@ -837,8 +837,9 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
 
             {/* Content */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-6">
+              <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
                 <h3 className="text-lg font-medium text-[#373753] mb-4">Detalhes do subcritério</h3>
+                <div className="border-b border-[#e1e9f4] -mx-4 mb-4" />
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -886,8 +887,9 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
                 </div>
               </div>
               
-              <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-6">
+              <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
                 <h3 className="text-lg font-medium text-[#373753] mb-4">Complementos da IA</h3>
+                <div className="border-b border-[#e1e9f4] -mx-4 mb-4" />
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="keywords" className="text-sm font-medium text-[#373753] mb-2 block">Palavra chave</Label>

@@ -33,13 +33,6 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
       setLoading(true);
       setError(null);
 
-      console.log('🎯 Criando novo critério:', {
-        name: name.trim(),
-        company: company?.name,
-        companyId
-      });
-
-      // Verificação adicional de dados
       if (!companyId || typeof companyId !== 'string') {
         throw new Error('ID da empresa inválido ou ausente');
       }
@@ -62,15 +55,6 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
         .single();
 
       if (insertError) {
-        console.error('❌ Erro ao criar critério:', {
-          error: insertError,
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint
-        });
-        
-        // Tratamento específico de erros
         switch (insertError.code) {
           case '23505':
             if (insertError.message.includes('criteria_name_company_id_key')) {
@@ -98,20 +82,12 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
         throw new Error('Critério criado mas dados não retornados');
       }
 
-      console.log('✅ Critério criado com sucesso:', data);
-      
       setSuccess(true);
-      
-      // Voltar após 2 segundos
       setTimeout(() => {
         onBack();
       }, 2000);
-
     } catch (err) {
-      console.error('💥 Erro inesperado ao criar critério:', err);
-      
       if (err instanceof Error) {
-        // Erros específicos conhecidos
         if (err.message.includes('Failed to fetch')) {
           setError('Erro de conexão: Verifique sua conexão com a internet e tente novamente.');
         } else if (err.message.includes('JWT')) {
@@ -150,33 +126,31 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
   return (
     <div className="px-6 pb-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="flex items-center gap-4 mb-6">
+        <button
           onClick={onBack}
-          className="h-8 w-8 p-0"
+          className="w-10 h-10 bg-white border border-[#e1e9f4] rounded-full flex items-center justify-center shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]"
         >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <p className="text-[#677c92] text-xs uppercase tracking-wide">CRITÉRIOS</p>
-          <h1 className="text-[#373753] text-xl font-medium">Novo Critério</h1>
+          <ArrowLeft className="h-4 w-4 text-[#373753]" />
+        </button>
+        <div className="flex-1">
+          <div className="text-[#677c92] text-xs uppercase tracking-wide">CRITÉRIOS</div>
+          <div className="text-[#373753] text-xl font-medium tracking-tight">Novo Critério</div>
         </div>
       </div>
 
-      {/* Company Info */}
-      <div className="bg-[#e1f0ff] border border-[#b3d9ff] rounded-lg p-4">
-        <p className="text-[#1e40af] text-sm">
-          <strong>Criando critério para a empresa:</strong> {company?.name}
-        </p>
-      </div>
-
-      {/* Form */}
       <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]">
-        <div className="p-6">
-          <h2 className="text-lg font-medium text-[#373753] mb-6">Informações Gerais</h2>
-          
+        <div className="pt-4 px-6 pb-6">
+          <h2 className="text-lg font-medium text-[#373753] mb-4">Informações Gerais</h2>
+          <div className="border-b border-[#e1e9f4] -mx-6 mb-6" />
+
+          {/* Company Info */}
+          <div className="bg-[#e1f0ff] border border-[#b3d9ff] rounded-lg p-4 mb-6 mt-6" style={{ marginTop: 24 }}>
+            <p className="text-[#1e40af] text-sm">
+              <strong>Criando critério para a empresa:</strong> {company?.name}
+            </p>
+          </div>
+
           {error && (
             <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-4 mb-6">
               <div className="flex items-start gap-3">
@@ -192,7 +166,7 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-[#373753] mb-2">
-                Nome do critério *
+                Nome do critério <span className="text-red-500">*</span>
               </label>
               <Input
                 id="name"
@@ -212,7 +186,7 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
             <div className="bg-[#f0f4fa] border border-[#e1e9f4] rounded-lg p-4">
               <h4 className="font-medium text-[#373753] mb-2">Subcritérios de Avaliação</h4>
               <p className="text-sm text-[#677c92] mb-3">
-                Exemplos de Como utilizar subcritérios para avaliar chamadas nesta empresa:
+                Exemplos de como utilizar subcritérios para avaliar chamadas nesta empresa:
               </p>
               <ul className="text-sm text-[#677c92] space-y-1">
                 <li>• <strong>Finalização:</strong> Como o atendente finaliza a chamada</li>
@@ -252,8 +226,6 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
           </form>
         </div>
       </div>
-
-      {/* Info Box */}
     </div>
   );
 }
