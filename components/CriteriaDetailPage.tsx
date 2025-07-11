@@ -719,7 +719,6 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
             <div className="w-12"></div>
           </div>
         </div>
-
         {/* Table Rows */}
         <div>
           {subCriteriaTableExists && subCriteria
@@ -781,7 +780,6 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
               </div>
             </div>
           ))}
-
           {(subCriteria.length === 0 || !subCriteriaTableExists) && (
             <div className="px-6 py-8 text-center">
               <div className="text-[#677c92] text-base">
@@ -805,6 +803,17 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
           )}
         </div>
       </div>
+      <div className="bg-[#FFFFFF] border border-[#e1e9f4] rounded-lg p-4">
+              <h4 className="font-medium text-[#373753] mb-4">Exemplos de como utilizar subcritérios para avaliar chamadas:</h4>
+              <ul className="text-sm text-[#677c92] space-y-1">
+                <li>• <strong>Finalização:</strong> Como o atendente finaliza a chamada</li>
+                <li>• <strong>Cordialidade:</strong> Nível de cortesia e educação</li>
+                <li>• <strong>Formalidade:</strong> Uso apropriado da linguagem formal</li>
+                <li>• <strong>Saudação:</strong> Qualidade da abertura da chamada</li>
+                <li>• <strong>Negociação:</strong> Habilidade de negociação e persuasão</li>
+                <li>• <strong>Abordagem:</strong> Técnica de abordagem do cliente</li>
+              </ul>
+            </div>
 
       {/* Create/Edit Modal */}
       {isSheetOpen && (

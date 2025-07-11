@@ -7,6 +7,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle, Building2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../src/lib/supabase';
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -14,6 +15,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,6 +37,27 @@ export function LoginPage() {
     } catch (err) {
       setError('Erro inesperado durante o login');
       console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Digite seu email e clique em "Esqueci minha senha" para receber o link.');
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: 'https://zingy-tanuki-154026.netlify.app/reset-password',
+      });
+      if (error) {
+        setError('Erro ao enviar e-mail de redefinição: ' + error.message);
+      } else {
+        setInfo('Enviamos um link de redefinição de senha para seu e-mail.');
+      }
     } finally {
       setLoading(false);
     }
@@ -65,6 +88,11 @@ export function LoginPage() {
                 <AlertDescription className="text-[#DC2F1C]">
                   {error}
                 </AlertDescription>
+              </Alert>
+            )}
+            {info && (
+              <Alert className="mb-4 border-green-500 bg-green-50">
+                <AlertDescription className="text-green-700 text-sm">{info}</AlertDescription>
               </Alert>
             )}
 
@@ -132,6 +160,14 @@ export function LoginPage() {
                   </div>
                 )}
               </Button>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="block w-full text-xs text-[#3057f2] hover:text-[#2545d9] mt-2 focus:outline-none"
+                disabled={loading}
+              >
+                Esqueci minha senha
+              </button>
             </form>
 
             {/* Seções de acesso rápido removidas por segurança */}

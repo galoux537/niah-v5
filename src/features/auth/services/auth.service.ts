@@ -145,6 +145,7 @@ class AuthService {
         email: data.email,
         password: data.password,
         options: {
+          emailRedirectTo: 'https://zingy-tanuki-154026.netlify.app/login',
           data: {
             name: data.name,
           },

@@ -16,8 +16,9 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 import UsersPage from './components/UsersPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 
-export type Page = 'avaliacoes' | 'list-detail' | 'criteria' | 'criteria-detail' | 'criteria-create' | 'configuracoes' | 'usuarios' | 'batch-analysis';
+export type Page = 'avaliacoes' | 'list-detail' | 'criteria' | 'criteria-detail' | 'criteria-create' | 'configuracoes' | 'usuarios' | 'batch-analysis' | 'reset-password';
 
 function AppContent() {
   const authContext = useAuth();
@@ -56,6 +57,13 @@ function AppContent() {
   useEffect(() => {
     setCurrentPage('avaliacoes');
   }, [company?.id]);
+
+  // Detectar rota de redefinição de senha
+  useEffect(() => {
+    if (window.location.pathname.includes('reset-password')) {
+      setCurrentPage('reset-password');
+    }
+  }, []);
 
   const handleBackToDashboard = useCallback(() => {
     setCurrentPage('avaliacoes');
@@ -162,6 +170,9 @@ function AppContent() {
         
         case 'batch-analysis':
           return <BatchAnalysisPage />;
+
+        case 'reset-password':
+          return <ResetPasswordPage />;
         
         default:
           console.warn(`Unknown page: ${currentPage}, defaulting to avaliacoes`);

@@ -27,10 +27,15 @@ export function Header({ currentPage, onPageChange }: HeaderProps) {
     <header className="bg-white border-b border-[#e1e9f4] sticky top-0 z-50">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center">
+          {/* Logo – clicável para voltar às Avaliações */}
+          <button
+            type="button"
+            onClick={() => onPageChange('avaliacoes')}
+            className="flex items-center focus:outline-none"
+            title="Voltar para Avaliações"
+          >
             <img src={logoBlue} alt="Logo" width={73} height={22} />
-          </div>
+          </button>
 
           {/* Informações da Empresa e Logout */}
           <div className="flex items-center gap-4">

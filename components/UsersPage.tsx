@@ -70,6 +70,9 @@ export default function UsersPage() {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
+        options: {
+          emailRedirectTo: 'https://zingy-tanuki-154026.netlify.app/login'
+        }
       });
       
       if (authError) {

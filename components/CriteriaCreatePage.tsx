@@ -170,9 +170,6 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
         <p className="text-[#1e40af] text-sm">
           <strong>Criando critério para a empresa:</strong> {company?.name}
         </p>
-        <p className="text-[#1e40af] text-xs mt-1">
-          Este critério será exclusivo da sua empresa e não será visível para outras empresas.
-        </p>
       </div>
 
       {/* Form */}
@@ -213,9 +210,9 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
             </div>
 
             <div className="bg-[#f0f4fa] border border-[#e1e9f4] rounded-lg p-4">
-              <h4 className="font-medium text-[#373753] mb-2">Critérios de Avaliação</h4>
+              <h4 className="font-medium text-[#373753] mb-2">Subcritérios de Avaliação</h4>
               <p className="text-sm text-[#677c92] mb-3">
-                Como este critério pode ser usado para avaliar chamadas nesta empresa:
+                Exemplos de Como utilizar subcritérios para avaliar chamadas nesta empresa:
               </p>
               <ul className="text-sm text-[#677c92] space-y-1">
                 <li>• <strong>Finalização:</strong> Como o atendente finaliza a chamada</li>
@@ -257,13 +254,6 @@ export function CriteriaCreatePage({ onBack }: CriteriaCreatePageProps) {
       </div>
 
       {/* Info Box */}
-      <div className="bg-[#f0f4fa] border border-[#e1e9f4] rounded-lg p-4">
-        <h4 className="font-medium text-[#373753] mb-2">Sobre os Critérios</h4>
-        <p className="text-sm text-[#677c92]">
-          Os critérios são utilizados para definir os parâmetros de avaliação das chamadas. 
-          Cada critério representa um aspecto específico que será pontuado durante a análise das ligações.
-        </p>
-      </div>
     </div>
   );
 }
