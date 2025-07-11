@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { ArrowLeft, AlertTriangle, RefreshCw, User, Building2, Plus, Edit, Trash2, MoreVertical, Database, Copy, Search, Pen } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, RefreshCw, User, Building2, Plus, Edit, Trash2, MoreVertical, Database, Copy, Search, Pen, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../src/lib/supabase';
 
@@ -123,6 +123,13 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
   const [isEditingName, setIsEditingName] = useState(false);
   const [criteriaName, setCriteriaName] = useState('');
   const [originalName, setOriginalName] = useState('');
+
+  // Função para mascarar ID do critério
+  const getDisplayCriteriaId = (id: string) => {
+    if (!id) return '';
+    if (id.length < 10) return id;
+    return `${id.slice(0, 8)}${'*'.repeat(8)}${id.slice(-8)}`;
+  };
 
   // Form state
   const [newSubCriteria, setNewSubCriteria] = useState({
@@ -652,9 +659,9 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
           </div>
           <div className="flex items-center gap-3">
             <Input
-              value={criteriaId}
+              value={getDisplayCriteriaId(criteriaId)}
               readOnly
-              className="flex-1 h-10 rounded-lg border border-[#e1e9f4] px-3 py-2 text-sm bg-[#f8fafc] text-[#677c92] cursor-default"
+              className="flex-1 h-10 rounded-lg border border-[#e1e9f4] px-3 py-2 text-sm bg-[#f8fafc] text-[#677c92] cursor-default font-mono"
             />
             <Button
               onClick={() => {
@@ -664,11 +671,17 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
               }}
               variant="outline"
               size="sm"
-              className={`h-10 px-3 border-[#e1e9f4] hover:bg-[#f8fafc] shadow-none flex items-center gap-1 ${copied ? 'text-green-600 border-green-200 bg-green-50' : 'text-[#677c92] hover:text-[#373753]'}`}
-              title="Copiar ID do critério"
+              className={`h-10 px-3 border-[#e1e9f4] hover:bg-[#f8fafc] shadow-none flex items-center gap-1 transition-colors ${copied ? 'text-green-600 border-green-200 bg-green-50' : 'text-[#677c92] hover:text-[#373753]'}`}
+              title="Copiar ID do critério completo"
             >
-              <Copy className={`h-4 w-4 ${copied ? 'text-green-600' : ''}`} />
-              <span className={`text-xs font-medium transition-colors duration-200 ${copied ? 'text-green-600' : ''}`}>{copied ? 'Copiado' : 'Copiar'}</span>
+              {copied ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              <span className={`text-xs font-medium transition-colors duration-200 ${copied ? 'text-green-600' : ''}`}>
+                {copied ? 'Copiado' : 'Copiar'}
+              </span>
             </Button>
           </div>
         </div>

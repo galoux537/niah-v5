@@ -27,7 +27,7 @@ const BatchAnalysisDocumentation: React.FC = () => {
   
   const [formData, setFormData] = useState({
     batch_name: 'NOME_DO_LOTE_AQUI',
-    criteria: '{"criteria_name":"critério 4","criteriaId":"e270f185-0e87-48a5-8c12-e2cd526fe041"}',
+    criteria: '{"criteria_name":"Selecione um critério","criteriaId":"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"}',
     webhook: 'https://webhook.site/seu-id-unico',
     audioFiles_0: null as File | null,
     phone_number_0: '5511999999999',
@@ -263,11 +263,15 @@ const BatchAnalysisDocumentation: React.FC = () => {
     
     // Mascarar criteriaId no JSON do campo criteria
     let displayCriteria = formData.criteria;
-    if (!forCopy && selectedCriteriaId) {
+    if (!forCopy) {
       try {
         const criteriaObj = JSON.parse(formData.criteria);
         if (criteriaObj.criteriaId) {
-          criteriaObj.criteriaId = getDisplayCriteriaId(criteriaObj.criteriaId);
+          // Se há um critério selecionado, usar o ID real mascarado
+          if (selectedCriteriaId && criteriaObj.criteriaId !== 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX') {
+            criteriaObj.criteriaId = getDisplayCriteriaId(criteriaObj.criteriaId);
+          }
+          // Se não há critério selecionado, manter os dados fictícios
           displayCriteria = JSON.stringify(criteriaObj);
         }
       } catch (e) {
