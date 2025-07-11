@@ -819,7 +819,7 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
       {isSheetOpen && (
         <>
           {/* Overlay */}
-          <div className="fixed inset-0 bg-black/20 z-30" onClick={() => setIsSheetOpen(false)} />
+          <div className="fixed inset-0 bg-black/20 z-30 backdrop-blur-sm" onClick={() => setIsSheetOpen(false)} />
           
           {/* Modal */}
           <div className="fixed right-0 top-11 bottom-0 w-[520px] bg-[#f9fafc] border-l border-[#e1e9f4] shadow-lg z-40">

@@ -653,7 +653,7 @@ export function CriteriaPage({ onCriteriaClick, onCreateCriteria }: CriteriaPage
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div
-              onClick={onCreateCriteria}
+              onClick={() => setShowCreateModal(true)}
               className="bg-[#e1e9f4] h-[72px] rounded-lg shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] cursor-pointer hover:bg-[#d1d9e4] transition-colors"
             >
               <div className="flex items-center justify-between h-full px-4">
@@ -895,10 +895,10 @@ export function CriteriaPage({ onCriteriaClick, onCreateCriteria }: CriteriaPage
       {showCreateModal && (
         <div
           ref={modalRef}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/20"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-sm"
           onClick={handleModalOverlayClick}
         >
-          <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-lg w-full max-w-md mx-auto p-8 relative">
+          <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-lg w-full max-w-md mx-auto pt-4 px-6 pb-6 relative">
             <button
               className="absolute top-4 right-4 text-[#677c92] hover:text-[#373753]"
               onClick={() => setShowCreateModal(false)}
@@ -906,8 +906,8 @@ export function CriteriaPage({ onCriteriaClick, onCreateCriteria }: CriteriaPage
               <X className="h-5 w-5" />
             </button>
             <div className="mb-6">
-              <div className="text-[#677c92] text-xs uppercase tracking-wide mb-1">CRITÉRIOS</div>
               <div className="text-[#373753] text-xl font-medium">Novo Critério</div>
+              <div className="border-b border-[#e1e9f4] -mx-6 mt-4" />
             </div>
             <form onSubmit={handleCreateCriteria} className="space-y-6">
               <div>
@@ -931,19 +931,19 @@ export function CriteriaPage({ onCriteriaClick, onCreateCriteria }: CriteriaPage
               )}
               <div className="flex gap-3 pt-2">
                 <Button
-                  type="submit"
-                  disabled={createLoading || !newCriteriaName.trim()}
-                  className="bg-[#3057f2] text-white hover:bg-[#2545d9] rounded-lg h-10 text-base font-medium shadow-none flex-1"
-                >
-                  {createLoading ? 'Salvando...' : 'Criar'}
-                </Button>
-                <Button
                   type="button"
                   variant="ghost"
                   onClick={() => setShowCreateModal(false)}
                   className="text-[#677c92] hover:text-[#373753] rounded-lg h-10 text-base flex-1"
                 >
                   Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createLoading || !newCriteriaName.trim()}
+                  className="bg-[#3057f2] text-white hover:bg-[#2545d9] rounded-lg h-10 text-base font-medium shadow-none flex-1"
+                >
+                  {createLoading ? 'Salvando...' : 'Criar'}
                 </Button>
               </div>
             </form>
