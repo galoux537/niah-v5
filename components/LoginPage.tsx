@@ -7,7 +7,8 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle, Building2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '../src/lib/supabase';
+import { supabase, getRedirectUrl, logEnvironment } from '../src/lib/supabase';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from './ui/dialog';
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -17,6 +18,11 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotInfo, setForgotInfo] = useState<string | null>(null);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +56,14 @@ export function LoginPage() {
     try {
       setLoading(true);
       setError(null);
+      
+      // Usar função utilitária para detectar ambiente e gerar URL correta
+      const redirectUrl = getRedirectUrl('/reset-password');
+      logEnvironment();
+      console.log('🔗 URL de redirecionamento:', redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://zingy-tanuki-154026.netlify.app/reset-password',
+        redirectTo: redirectUrl,
       });
       if (error) {
         setError('Erro ao enviar e-mail de redefinição: ' + error.message);
@@ -60,6 +72,32 @@ export function LoginPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NOVO: handleForgotPasswordModal
+  const handleForgotPasswordModal = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!forgotEmail) {
+      setForgotError('Digite seu email para receber o link de redefinição.');
+      return;
+    }
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotInfo(null);
+    // Sempre usar link de produção
+    const redirectUrl = 'https://zingy-tanuki-154026.netlify.app/reset-password';
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: redirectUrl,
+      });
+      if (error) {
+        setForgotError('Erro ao enviar e-mail de redefinição: ' + error.message);
+      } else {
+        setForgotInfo('Enviamos um link de redefinição de senha para seu e-mail.');
+      }
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -162,7 +200,12 @@ export function LoginPage() {
               </Button>
               <button
                 type="button"
-                onClick={handleForgotPassword}
+                onClick={() => {
+                  setForgotOpen(true);
+                  setForgotEmail(email); // Preenche com o email digitado, se houver
+                  setForgotError(null);
+                  setForgotInfo(null);
+                }}
                 className="block w-full text-xs text-[#3057f2] hover:text-[#2545d9] mt-2 focus:outline-none"
                 disabled={loading}
               >
@@ -180,6 +223,50 @@ export function LoginPage() {
           <p className="mt-1">Sistema de gestão para empresas</p>
         </div>
       </div>
+      {/* MODAL DE ESQUECI MINHA SENHA */}
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir senha</DialogTitle>
+            <DialogDescription>
+              Digite seu e-mail para receber o link de redefinição de senha.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPasswordModal} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">E-mail</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                autoFocus
+                disabled={forgotLoading}
+              />
+            </div>
+            {forgotError && (
+              <Alert className="border-[#DC2F1C] bg-[#fef2f2]">
+                <AlertDescription className="text-[#DC2F1C]">{forgotError}</AlertDescription>
+              </Alert>
+            )}
+            {forgotInfo && (
+              <Alert className="border-green-500 bg-green-50">
+                <AlertDescription className="text-green-700 text-sm">{forgotInfo}</AlertDescription>
+              </Alert>
+            )}
+            <DialogFooter>
+              <Button
+                type="submit"
+                className="w-full h-11 bg-[#3057f2] hover:bg-[#2545d9] text-white font-medium"
+                disabled={forgotLoading}
+              >
+                {forgotLoading ? 'Enviando...' : 'Enviar link de redefinição'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

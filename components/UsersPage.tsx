@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../src/lib/supabase';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Trash2, Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { supabase, getRedirectUrl, logEnvironment } from '../src/lib/supabase';
 
 interface User {
   id: string;
@@ -66,12 +66,17 @@ export default function UsersPage() {
     setSuccess(null);
 
     try {
+      // Usar função utilitária para detectar ambiente e gerar URL correta
+      const redirectUrl = getRedirectUrl('/login');
+      logEnvironment();
+      console.log('🔗 URL de redirecionamento:', redirectUrl);
+      
       // 1. Cria no Auth do Supabase (como funcionava antes)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
         options: {
-          emailRedirectTo: 'https://zingy-tanuki-154026.netlify.app/login'
+          emailRedirectTo: redirectUrl
         }
       });
       

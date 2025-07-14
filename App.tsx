@@ -60,9 +60,40 @@ function AppContent() {
 
   // Detectar rota de redefinição de senha
   useEffect(() => {
-    if (window.location.pathname.includes('reset-password')) {
-      setCurrentPage('reset-password');
-    }
+    const checkResetPasswordRoute = () => {
+      // Verificar se está na rota de redefinição de senha
+      const isResetPasswordRoute = 
+        window.location.pathname.includes('reset-password') ||
+        window.location.hash.includes('reset-password') ||
+        window.location.search.includes('reset-password') ||
+        window.location.hash.includes('access_token') ||
+        window.location.hash.includes('type=recovery');
+      
+      if (isResetPasswordRoute) {
+        console.log('🔧 Detectada rota de redefinição de senha');
+        console.log('📍 Pathname:', window.location.pathname);
+        console.log('🔗 Hash:', window.location.hash);
+        console.log('❓ Search:', window.location.search);
+        setCurrentPage('reset-password');
+      }
+    };
+
+    // Verificar imediatamente
+    checkResetPasswordRoute();
+
+    // Listener para mudanças de URL
+    const handleUrlChange = () => {
+      console.log('🔄 URL mudou, verificando rota...');
+      checkResetPasswordRoute();
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
   }, []);
 
   const handleBackToDashboard = useCallback(() => {

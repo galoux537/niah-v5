@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, getRedirectUrl, logEnvironment } from '../../../lib/supabase';
 import type { 
   User, 
   Company, 
@@ -141,11 +141,16 @@ class AuthService {
   // Registrar novo usuário
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
+      // Usar função utilitária para detectar ambiente e gerar URL correta
+      const redirectUrl = getRedirectUrl('/login');
+      logEnvironment();
+      console.log('🔗 URL de redirecionamento:', redirectUrl);
+      
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: 'https://zingy-tanuki-154026.netlify.app/login',
+          emailRedirectTo: redirectUrl,
           data: {
             name: data.name,
           },

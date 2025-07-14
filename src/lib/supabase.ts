@@ -39,6 +39,36 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Utilitário para detectar ambiente e gerar URLs de redirecionamento
+export const getRedirectUrl = (path: string): string => {
+  const isDevelopment = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1'
+  );
+  
+  if (isDevelopment) {
+    return `${window.location.origin}${path}`;
+  }
+  
+  // URLs de produção
+  const productionUrls: Record<string, string> = {
+    '/login': 'https://zingy-tanuki-154026.netlify.app/login',
+    '/reset-password': 'https://zingy-tanuki-154026.netlify.app/reset-password',
+  };
+  
+  return productionUrls[path] || `https://zingy-tanuki-154026.netlify.app${path}`;
+};
+
+// Função para log de ambiente (debug)
+export const logEnvironment = (): void => {
+  if (typeof window !== 'undefined') {
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    console.log('🔧 Ambiente detectado:', isDevelopment ? 'Desenvolvimento' : 'Produção');
+    console.log('🌐 Hostname:', window.location.hostname);
+    console.log('🔗 Origin:', window.location.origin);
+  }
+};
+
 // Database types (updated for new structure)
 export interface Database {
   public: {
