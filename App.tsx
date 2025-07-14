@@ -96,6 +96,18 @@ function AppContent() {
     };
   }, []);
 
+  // NOVO: Forçar renderização da tela de redefinição de senha SEM autenticação
+  const isResetPasswordRoute =
+    window.location.pathname.includes('reset-password') ||
+    window.location.hash.includes('reset-password') ||
+    window.location.search.includes('reset-password') ||
+    window.location.hash.includes('access_token') ||
+    window.location.hash.includes('type=recovery');
+
+  if (isResetPasswordRoute) {
+    return <ResetPasswordPage />;
+  }
+
   const handleBackToDashboard = useCallback(() => {
     setCurrentPage('avaliacoes');
   }, []);
