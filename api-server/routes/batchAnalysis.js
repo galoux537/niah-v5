@@ -295,104 +295,150 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       }
     });
     
-    // Função para baixar áudio de URL
-    const downloadAudioFromUrl = async (url, index) => {
-      try {
-        console.log(`🌐 Baixando áudio da URL: ${url}`);
-        
-        // Validar URL antes de fazer a requisição
-        let urlObj;
+    // Função para baixar áudio de URL com retry e fallback
+    const downloadAudioFromUrl = async (url, index, isRequired = false) => {
+      const maxRetries = 3;
+      const baseDelay = 2000; // 2 segundos
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          urlObj = new URL(url);
-        } catch (urlError) {
-          throw new Error(`URL inválida: ${urlError.message}`);
-        }
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
+          console.log(`🌐 Tentativa ${attempt}/${maxRetries} - Baixando áudio da URL: ${url}`);
+          
+          // Validar URL antes de fazer a requisição
+          let urlObj;
+          try {
+            urlObj = new URL(url);
+          } catch (urlError) {
+            throw new Error(`URL inválida: ${urlError.message}`);
+          }
+          
+          // Headers mais robustos para simular navegador real
+          const headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'audio/*, */*, application/octet-stream',
+            'Accept': 'audio/*, video/*, application/octet-stream, */*',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
-            'Connection': 'keep-alive'
-          },
-          timeout: 30000 // 30 segundos timeout
-        });
-        
-        console.log(`📡 Resposta da URL: ${response.status} ${response.statusText}`);
-        console.log(`📋 Headers da resposta:`, Object.fromEntries(response.headers.entries()));
-        
-        if (!response.ok) {
-          // Tentar obter mais detalhes sobre o erro
-          let errorDetails = '';
-          try {
-            const errorText = await response.text();
-            if (errorText) {
-              errorDetails = ` - Detalhes: ${errorText.substring(0, 200)}`;
-            }
-          } catch (e) {
-            // Ignora erro ao ler resposta de erro
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'audio',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'DNT': '1',
+            'Upgrade-Insecure-Requests': '1'
+          };
+          
+          // Adicionar delay progressivo entre tentativas
+          if (attempt > 1) {
+            const delay = baseDelay * Math.pow(2, attempt - 1); // Backoff exponencial
+            console.log(`⏳ Aguardando ${delay}ms antes da tentativa ${attempt}...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
           
-          throw new Error(`HTTP ${response.status}: ${response.statusText}${errorDetails}`);
+          const response = await fetch(url, {
+            method: 'GET',
+            headers,
+            timeout: 30000 // 30 segundos timeout
+          });
+          
+          console.log(`📡 Tentativa ${attempt} - Resposta da URL: ${response.status} ${response.statusText}`);
+          console.log(`📋 Headers da resposta:`, Object.fromEntries(response.headers.entries()));
+          
+          if (!response.ok) {
+            // Tentar obter mais detalhes sobre o erro
+            let errorDetails = '';
+            try {
+              const errorText = await response.text();
+              if (errorText) {
+                errorDetails = ` - Detalhes: ${errorText.substring(0, 200)}`;
+              }
+            } catch (e) {
+              // Ignora erro ao ler resposta de erro
+            }
+            
+            const error = `HTTP ${response.status}: ${response.statusText}${errorDetails}`;
+            
+            // Se é a última tentativa e é obrigatório, falhar
+            if (attempt === maxRetries && isRequired) {
+              throw new Error(error);
+            }
+            
+            // Se não é obrigatório ou ainda há tentativas, continuar
+            if (attempt < maxRetries) {
+              console.log(`⚠️ Tentativa ${attempt} falhou: ${error}. Tentando novamente...`);
+              continue;
+            } else {
+              throw new Error(error);
+            }
+          }
+          
+          const contentType = response.headers.get('content-type');
+          console.log(`🎵 Content-Type recebido: ${contentType}`);
+          
+          // Aceitar mais tipos de conteúdo além de audio/*
+          const acceptedTypes = [
+            'audio/', 'video/', 'application/octet-stream', 
+            'application/ogg', 'application/mp4', 'application/mpeg'
+          ];
+          
+          const isAcceptedType = acceptedTypes.some(type => 
+            contentType && contentType.toLowerCase().includes(type)
+          );
+          
+          if (!contentType || !isAcceptedType) {
+            console.warn(`⚠️ Content-Type suspeito: ${contentType}. Tentando processar mesmo assim...`);
+          }
+          
+          const buffer = await response.arrayBuffer();
+          const audioBuffer = Buffer.from(buffer);
+          
+          console.log(`📦 Tamanho do arquivo baixado: ${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB`);
+          
+          // Verificar se o arquivo não está vazio
+          if (audioBuffer.length === 0) {
+            throw new Error('Arquivo baixado está vazio (0 bytes)');
+          }
+          
+          // Extrair nome do arquivo da URL
+          const pathname = urlObj.pathname;
+          let filename = pathname.split('/').pop();
+          
+          // Se não conseguir extrair nome, usar padrão
+          if (!filename || filename === '' || !filename.includes('.')) {
+            const extension = contentType ? contentType.split('/')[1] || 'mp3' : 'mp3';
+            filename = `audio_from_url_${index}.${extension}`;
+          }
+          
+          // Criar objeto de arquivo similar ao multer
+          const file = {
+            fieldname: `audioFiles_${index}`,
+            originalname: filename,
+            encoding: '7bit',
+            mimetype: contentType || 'audio/mpeg',
+            buffer: audioBuffer,
+            size: audioBuffer.length
+          };
+          
+          console.log(`✅ Áudio baixado com sucesso na tentativa ${attempt}: ${filename} (${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB)`);
+          return file;
+          
+        } catch (error) {
+          console.error(`❌ Tentativa ${attempt} falhou para URL ${url}:`, error.message);
+          
+          // Se é a última tentativa, falhar
+          if (attempt === maxRetries) {
+            if (isRequired) {
+              throw new Error(`Falha ao baixar áudio da URL após ${maxRetries} tentativas: ${error.message}`);
+            } else {
+              throw new Error(`Falha ao baixar áudio da URL: ${error.message}`);
+            }
+          }
+          
+          // Se não é obrigatório, falhar imediatamente
+          if (!isRequired) {
+            throw error;
+          }
         }
-        
-        const contentType = response.headers.get('content-type');
-        console.log(`🎵 Content-Type recebido: ${contentType}`);
-        
-        // Aceitar mais tipos de conteúdo além de audio/*
-        const acceptedTypes = [
-          'audio/', 'video/', 'application/octet-stream', 
-          'application/ogg', 'application/mp4', 'application/mpeg'
-        ];
-        
-        const isAcceptedType = acceptedTypes.some(type => 
-          contentType && contentType.toLowerCase().includes(type)
-        );
-        
-        if (!contentType || !isAcceptedType) {
-          console.warn(`⚠️ Content-Type suspeito: ${contentType}. Tentando processar mesmo assim...`);
-        }
-        
-        const buffer = await response.arrayBuffer();
-        const audioBuffer = Buffer.from(buffer);
-        
-        console.log(`📦 Tamanho do arquivo baixado: ${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB`);
-        
-        // Verificar se o arquivo não está vazio
-        if (audioBuffer.length === 0) {
-          throw new Error('Arquivo baixado está vazio (0 bytes)');
-        }
-        
-        // Extrair nome do arquivo da URL
-        const pathname = urlObj.pathname;
-        let filename = pathname.split('/').pop();
-        
-        // Se não conseguir extrair nome, usar padrão
-        if (!filename || filename === '' || !filename.includes('.')) {
-          const extension = contentType ? contentType.split('/')[1] || 'mp3' : 'mp3';
-          filename = `audio_from_url_${index}.${extension}`;
-        }
-        
-        // Criar objeto de arquivo similar ao multer
-        const file = {
-          fieldname: `audioFiles_${index}`,
-          originalname: filename,
-          encoding: '7bit',
-          mimetype: contentType || 'audio/mpeg',
-          buffer: audioBuffer,
-          size: audioBuffer.length
-        };
-        
-        console.log(`✅ Áudio baixado com sucesso: ${filename} (${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB)`);
-        return file;
-        
-      } catch (error) {
-        console.error(`❌ Erro ao baixar áudio da URL ${url}:`, error.message);
-        throw new Error(`Falha ao baixar áudio da URL: ${error.message}`);
       }
     };
     
@@ -407,7 +453,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         // Para o índice 0 (obrigatório), usar Promise direto para capturar erro
         if (i === 0) {
           try {
-            const file = await downloadAudioFromUrl(indexedUrls[i], i);
+            const file = await downloadAudioFromUrl(indexedUrls[i], i, true); // isRequired = true
             indexedFiles[i] = file;
             console.log(`✅ URL ${i} (OBRIGATÓRIA) convertida para arquivo: ${file.originalname}`);
           } catch (error) {
@@ -424,7 +470,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           
           downloadPromises.push(
             delay(2000) // 2 segundos de delay entre downloads
-              .then(() => downloadAudioFromUrl(indexedUrls[i], i))
+              .then(() => downloadAudioFromUrl(indexedUrls[i], i, false)) // isRequired = false
               .then(file => {
                 indexedFiles[i] = file;
                 console.log(`✅ URL ${i} (opcional) convertida para arquivo: ${file.originalname}`);
