@@ -37,7 +37,7 @@ function validateAudioFile(file, index) {
   }
   
   // 3. Verificar formato de arquivo baseado na extensão
-  const allowedExtensions = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.aac', '.mp4', '.webm'];
+  const allowedExtensions = ['.mp3', '.mpeg', '.wav', '.m4a', '.ogg', '.flac', '.aac', '.mp4', '.webm'];
   const fileExtension = file.originalname.toLowerCase().match(/\.[^.]+$/);
   
   if (!fileExtension || !allowedExtensions.includes(fileExtension[0])) {
@@ -84,7 +84,7 @@ function validateAudioFile(file, index) {
       wavSignature.every((byte, i) => signature[i] === byte) ||
       m4aSignatures.some(sig => signature.slice(0, 4).every((byte, i) => i < 4 ? true : byte === sig[i]));
     
-    if (!isValidSignature && fileExtension && ['.mp3', '.wav', '.m4a'].includes(fileExtension[0])) {
+    if (!isValidSignature && fileExtension && ['.mp3', '.mpeg', '.wav', '.m4a'].includes(fileExtension[0])) {
       warnings.push({
         type: 'SUSPICIOUS_FILE_SIGNATURE',
         message: 'Assinatura de arquivo suspeita',
