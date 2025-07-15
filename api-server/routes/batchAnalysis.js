@@ -246,14 +246,22 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     }
     
     // Coletar URLs de áudio indexadas (suporta tanto audioUrls_ quanto audioUris_)
+    console.log(`🔍 Procurando URLs de áudio em req.body...`);
+    console.log(`📋 Todas as chaves em req.body:`, Object.keys(req.body));
+    
     Object.keys(req.body).forEach(key => {
+      console.log(`🔍 Verificando chave: ${key}`);
       const urlMatch = key.match(/^audioUris?_(\d+)$/);
       if (urlMatch) {
         const index = parseInt(urlMatch[1]);
         indexedUrls[index] = req.body[key];
-        console.log(`🔗 URL ${index} encontrada: ${req.body[key]}`);
+        console.log(`✅ URL ${index} encontrada: ${req.body[key]}`);
+      } else {
+        console.log(`❌ Chave ${key} não corresponde ao padrão audioUris?_`);
       }
     });
+    
+    console.log(`📊 URLs coletadas:`, indexedUrls);
     
     // Coletar metadados indexados
     Object.keys(req.body).forEach(key => {
@@ -412,25 +420,20 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     const files = organizedData.map(item => item.file);
     const { criteria, webhook, metadata, batch_name } = req.body;
     
-    if (!files || files.length === 0) {
-      return res.status(400).json({ 
-        error: 'Nenhum arquivo de áudio foi enviado' 
-      });
-    }
-    
     if (!criteria) {
       return res.status(400).json({ 
         error: 'Critérios de análise são obrigatórios' 
       });
     }
     
-    // ➡️ Validações obrigatórias específicas (apenas índice 0)
+    // ➡️ Validações obrigatórias específicas (apenas índice 0) - APÓS DOWNLOAD
     const hasAudioFile0 = indexedFiles[0] !== undefined;
     const hasAudioUrl0 = indexedUrls[0] !== undefined;
     
     console.log(`📋 Validação de campos obrigatórios para índice 0:`);
     console.log(`  - audioFiles_0 presente: ${hasAudioFile0}`);
     console.log(`  - audioUrls_0 presente: ${hasAudioUrl0}`);
+    console.log(`  - req.body keys:`, Object.keys(req.body));
     
     // Regra: audioFiles_0 tem prioridade, se não existir, audioUrls_0 é obrigatório
     if (!hasAudioFile0 && !hasAudioUrl0) {
@@ -451,6 +454,13 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       return res.status(400).json({
         error: 'MISSING_PHONE_NUMBER_0',
         message: 'phone_number_0 é obrigatório quando audioFiles_0 ou audioUrls_0 é enviado'
+      });
+    }
+    
+    // Verificar se há pelo menos um arquivo válido após processamento
+    if (!files || files.length === 0 || !files.some(f => f !== null)) {
+      return res.status(400).json({ 
+        error: 'Nenhum arquivo de áudio válido foi processado' 
       });
     }
     
