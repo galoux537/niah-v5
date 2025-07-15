@@ -394,8 +394,11 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     
     // Baixar áudios de URLs
     const downloadPromises = [];
+    console.log(`📊 URLs para download:`, indexedUrls);
+    
     for (let i = 0; i < indexedUrls.length; i++) {
       if (indexedUrls[i]) {
+        console.log(`🔄 Iniciando download da URL ${i}: ${indexedUrls[i]}`);
         downloadPromises.push(
           downloadAudioFromUrl(indexedUrls[i], i)
             .then(file => {
@@ -415,6 +418,11 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs...`);
       await Promise.all(downloadPromises);
       console.log(`✅ Todos os downloads concluídos`);
+      console.log(`📊 indexedFiles após downloads:`, Object.keys(indexedFiles).map(k => ({
+        index: k,
+        hasFile: !!indexedFiles[k],
+        filename: indexedFiles[k]?.originalname
+      })));
     }
     
     // Organizar dados por índice
