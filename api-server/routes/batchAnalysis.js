@@ -399,31 +399,64 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     for (let i = 0; i < indexedUrls.length; i++) {
       if (indexedUrls[i]) {
         console.log(`🔄 Iniciando download da URL ${i}: ${indexedUrls[i]}`);
-        downloadPromises.push(
-          downloadAudioFromUrl(indexedUrls[i], i)
-            .then(file => {
-              indexedFiles[i] = file;
-              console.log(`✅ URL ${i} convertida para arquivo: ${file.originalname}`);
-            })
-            .catch(error => {
-              console.error(`❌ Falha na conversão da URL ${i}:`, error.message);
-              throw error;
-            })
-        );
+        
+        // Para o índice 0 (obrigatório), usar Promise direto para capturar erro
+        if (i === 0) {
+          try {
+            const file = await downloadAudioFromUrl(indexedUrls[i], i);
+            indexedFiles[i] = file;
+            console.log(`✅ URL ${i} (OBRIGATÓRIA) convertida para arquivo: ${file.originalname}`);
+          } catch (error) {
+            console.error(`❌ ERRO CRÍTICO: Falha no download da URL ${i} (OBRIGATÓRIA):`, error.message);
+            return res.status(400).json({
+              error: 'AUDIO_0_DOWNLOAD_FAILED',
+              message: `Falha ao baixar áudio obrigatório (índice 0): ${error.message}`,
+              details: `URL: ${indexedUrls[i]}`
+            });
+          }
+        } else {
+          // Para outros índices (opcionais), permitir falha
+          downloadPromises.push(
+            downloadAudioFromUrl(indexedUrls[i], i)
+              .then(file => {
+                indexedFiles[i] = file;
+                console.log(`✅ URL ${i} (opcional) convertida para arquivo: ${file.originalname}`);
+                return { success: true, index: i, file };
+              })
+              .catch(error => {
+                console.error(`❌ Falha na conversão da URL ${i} (opcional):`, error.message);
+                return { success: false, index: i, error: error.message };
+              })
+          );
+        }
       }
     }
     
-    // Aguardar todos os downloads
+    // Aguardar downloads opcionais (índices > 0)
     if (downloadPromises.length > 0) {
-      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs...`);
-      await Promise.all(downloadPromises);
-      console.log(`✅ Todos os downloads concluídos`);
-      console.log(`📊 indexedFiles após downloads:`, Object.keys(indexedFiles).map(k => ({
-        index: k,
-        hasFile: !!indexedFiles[k],
-        filename: indexedFiles[k]?.originalname
-      })));
+      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs opcionais...`);
+      const results = await Promise.allSettled(downloadPromises);
+      
+      console.log(`📊 Resultados dos downloads opcionais:`);
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          const data = result.value;
+          if (data.success) {
+            console.log(`✅ URL ${data.index}: Download bem-sucedido`);
+          } else {
+            console.log(`❌ URL ${data.index}: Falhou - ${data.error}`);
+          }
+        } else {
+          console.log(`❌ URL ${i}: Promise rejeitada - ${result.reason}`);
+        }
+      });
     }
+    
+    console.log(`📊 indexedFiles após downloads:`, Object.keys(indexedFiles).map(k => ({
+      index: k,
+      hasFile: !!indexedFiles[k],
+      filename: indexedFiles[k]?.originalname
+    })));
     
     // Organizar dados por índice
     const organizedData = [];
@@ -497,6 +530,8 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.'
       });
     }
+    
+
     
     // Se ambos existem, usar o arquivo (prioridade)
     if (hasAudioFile0 && hasAudioUrl0) {
