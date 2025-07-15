@@ -665,16 +665,13 @@ echo $response;`
                     
                     {/* audioUrls_0 - Nova funcionalidade */}
                     <div className="flex items-center gap-4">
-                      <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-blue-100 rounded-md items-center text-blue-600 text-sm font-mono">audioUrls_0</span></div>
+                      <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">audioUrls_0*</span></div>
                       <Input
                         value={formData.audioUrls_0 || ''}
                         onChange={(e) => handleInputChange('audioUrls_0', e.target.value)}
                         placeholder="https://exemplo.com/audio.mp3"
                         className="flex-1 h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px]"
                       />
-                      <div className="text-xs text-blue-600">
-                        Obrigatório se audioFiles_0 não for fornecido
-                      </div>
                     </div>
                     
                     {/* phone_number_0 */}
@@ -769,16 +766,13 @@ echo $response;`
                     
                     {/* audioUrls_1 - Nova funcionalidade */}
                     <div className="flex items-center gap-4">
-                      <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-blue-100 rounded-md items-center text-blue-600 text-sm font-mono">audioUrls_1</span></div>
+                      <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">audioUrls_1</span></div>
                       <Input
                         value={formData.audioUrls_1 || ''}
                         onChange={(e) => handleInputChange('audioUrls_1', e.target.value)}
                         placeholder="https://exemplo.com/audio.mp3"
                         className="flex-1 h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px]"
                       />
-                      <div className="text-xs text-blue-600">
-                        Obrigatório se audioFiles_1 não for fornecido
-                      </div>
                     </div>
                     
                     {/* phone_number_1 */}
