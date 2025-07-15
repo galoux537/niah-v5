@@ -2,15 +2,16 @@ import React from 'react';
 import logoBlue from '../logo completa azul 1.svg';
 import { useAuth } from '../contexts/AuthContext';
 import { Building2, LogOut, User, Users } from 'lucide-react';
-import { Page } from '../App';
+import { Page } from '../src/lib/navigation';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 
 interface HeaderProps {
   currentPage: Page;
   onPageChange: (page: Page) => void;
+  onBack?: () => void;
 }
 
-export function Header({ currentPage, onPageChange }: HeaderProps) {
+export function Header({ currentPage, onPageChange, onBack }: HeaderProps) {
   const { company, signOut } = useAuth();
 
   const tabs = [
@@ -36,6 +37,20 @@ export function Header({ currentPage, onPageChange }: HeaderProps) {
           >
             <img src={logoBlue} alt="Logo" width={73} height={22} />
           </button>
+
+          {/* Botão Voltar - aparece apenas em páginas de detalhes */}
+          {onBack && (currentPage === 'list-detail' || currentPage === 'criteria-detail' || currentPage === 'criteria-create') && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="ml-4 p-2 text-[#677c92] hover:text-[#373753] hover:bg-[#f9fafc] rounded-lg transition-colors"
+              title="Voltar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
 
           {/* Informações da Empresa e Logout */}
           <div className="flex items-center gap-4">

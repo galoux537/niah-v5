@@ -198,6 +198,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setCompany(null);
       localStorage.removeItem('niah_company');
+      
+      // Limpar histórico de navegação
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.href);
+      }
+      
       console.log('✅ Logout bem-sucedido');
     } catch (error) {
       console.error('❌ Erro no logout:', error);

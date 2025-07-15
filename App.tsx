@@ -14,11 +14,10 @@ import { Header } from './components/Header';
 import { LoginPage } from './components/LoginPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { useNavigationHistory, Page } from './src/lib/navigation';
 
 import UsersPage from './components/UsersPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
-
-export type Page = 'avaliacoes' | 'list-detail' | 'criteria' | 'criteria-detail' | 'criteria-create' | 'configuracoes' | 'usuarios' | 'batch-analysis' | 'reset-password';
 
 function AppContent() {
   const authContext = useAuth();
@@ -42,6 +41,31 @@ function AppContent() {
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [selectedListName, setSelectedListName] = useState<string>('');
 
+  // Callbacks para navegação
+  // Callbacks para navegação
+  const handleBackToDashboard = useCallback(() => {
+    setCurrentPage('avaliacoes');
+    setSelectedCriteriaId(null);
+    setSelectedListId(null);
+    setSelectedListName('');
+  }, []);
+
+  const handleBackToCriteria = useCallback(() => {
+    setCurrentPage('criteria');
+    setSelectedCriteriaId(null);
+  }, []);
+
+  // Hook de navegação
+  const { navigateTo, goBack, clearHistory } = useNavigationHistory(
+    currentPage,
+    setCurrentPage,
+    handleBackToDashboard,
+    handleBackToCriteria,
+    selectedCriteriaId,
+    selectedListId,
+    selectedListName
+  );
+
   // Limpar seleções quando necessário
   useEffect(() => {
     if (currentPage !== 'criteria-detail' && currentPage !== 'criteria-create') {
@@ -55,8 +79,15 @@ function AppContent() {
 
   // Sempre que a empresa mudar, forçar navegação para avaliacoes
   useEffect(() => {
-    setCurrentPage('avaliacoes');
-  }, [company?.id]);
+    navigateTo('avaliacoes');
+  }, [company?.id, navigateTo]);
+
+  // Limpar histórico quando o usuário faz logout
+  useEffect(() => {
+    if (!company) {
+      clearHistory();
+    }
+  }, [company, clearHistory]);
 
   // Detectar rota de redefinição de senha
   useEffect(() => {
@@ -74,7 +105,7 @@ function AppContent() {
         console.log('📍 Pathname:', window.location.pathname);
         console.log('🔗 Hash:', window.location.hash);
         console.log('❓ Search:', window.location.search);
-        setCurrentPage('reset-password');
+        navigateTo('reset-password');
       }
     };
 
@@ -94,7 +125,7 @@ function AppContent() {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
     };
-  }, []);
+  }, [navigateTo]);
 
   // NOVO: Forçar renderização da tela de redefinição de senha SEM autenticação
   const isResetPasswordRoute =
@@ -108,15 +139,11 @@ function AppContent() {
     return <ResetPasswordPage />;
   }
 
-  const handleBackToDashboard = useCallback(() => {
-    setCurrentPage('avaliacoes');
-  }, []);
-
   const handleListClick = useCallback((listId: string, listName: string) => {
     setSelectedListId(listId);
     setSelectedListName(listName);
-    setCurrentPage('list-detail');
-  }, []);
+    navigateTo('list-detail', { selectedListId: listId, selectedListName: listName });
+  }, [navigateTo]);
 
   const handleCriteriaClick = useCallback((criteriaId: string) => {
     if (!criteriaId || typeof criteriaId !== 'string') {
@@ -124,25 +151,20 @@ function AppContent() {
       return;
     }
     setSelectedCriteriaId(criteriaId);
-    setCurrentPage('criteria-detail');
-  }, []);
+    navigateTo('criteria-detail', { selectedCriteriaId: criteriaId });
+  }, [navigateTo]);
 
   const handleCreateCriteria = useCallback(() => {
-    setCurrentPage('criteria-create');
-  }, []);
-
-  const handleBackToCriteria = useCallback(() => {
-    setCurrentPage('criteria');
-    setSelectedCriteriaId(null);
-  }, []);
+    navigateTo('criteria-create');
+  }, [navigateTo]);
 
   const handlePageChange = useCallback((page: Page) => {
     if (!page || typeof page !== 'string') {
       console.error('handlePageChange: invalid page provided:', page);
       return;
     }
-    setCurrentPage(page);
-  }, []);
+    navigateTo(page);
+  }, [navigateTo]);
 
   const renderPage = useCallback(() => {
     try {
@@ -157,7 +179,7 @@ function AppContent() {
         case 'list-detail':
           if (!selectedListId || !selectedListName) {
             console.warn('list-detail page accessed without selectedListId or selectedListName, redirecting to avaliacoes');
-            setCurrentPage('avaliacoes');
+            navigateTo('avaliacoes');
             return (
               <DashboardPage 
                 onListClick={handleListClick} 
@@ -168,7 +190,7 @@ function AppContent() {
             <ListDetailPageV3 
               listId={selectedListId} 
               listName={selectedListName}
-              onBack={handleBackToDashboard} 
+              onBack={goBack} 
             />
           );
         
@@ -183,7 +205,7 @@ function AppContent() {
         case 'criteria-detail':
           if (!selectedCriteriaId) {
             console.warn('criteria-detail page accessed without selectedCriteriaId, redirecting to criteria');
-            setCurrentPage('criteria');
+            navigateTo('criteria');
             return (
               <CriteriaPage 
                 onCriteriaClick={handleCriteriaClick} 
@@ -194,14 +216,14 @@ function AppContent() {
           return (
             <CriteriaDetailPage 
               criteriaId={selectedCriteriaId} 
-              onBack={handleBackToCriteria} 
+              onBack={goBack} 
             />
           );
         
         case 'criteria-create':
           return (
             <CriteriaCreatePage 
-              onBack={handleBackToCriteria} 
+              onBack={goBack} 
             />
           );
         
@@ -219,7 +241,7 @@ function AppContent() {
         
         default:
           console.warn(`Unknown page: ${currentPage}, defaulting to avaliacoes`);
-          setCurrentPage('avaliacoes');
+          navigateTo('avaliacoes');
           return (
             <DashboardPage 
               onListClick={handleListClick} 
@@ -244,7 +266,7 @@ function AppContent() {
             </p>
             <button
               onClick={() => {
-                setCurrentPage('avaliacoes');
+                navigateTo('avaliacoes');
                 setSelectedCriteriaId(null);
                 setSelectedListId(null);
                 setSelectedListName('');
@@ -290,7 +312,7 @@ function AppContent() {
   return (
     <ErrorBoundary>
       <div className="bg-[#f9fafc] min-h-screen relative">
-        <Header currentPage={currentPage} onPageChange={handlePageChange} />
+        <Header currentPage={currentPage} onPageChange={handlePageChange} onBack={goBack} />
         <div className="pt-6">
           {renderPage()}
         </div>
