@@ -311,9 +311,13 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; NIAH-Audio-Downloader/1.0)',
-            'Accept': 'audio/*, */*',
-            'Accept-Encoding': 'gzip, deflate, br'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'audio/*, */*, application/octet-stream',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Connection': 'keep-alive'
           },
           timeout: 30000 // 30 segundos timeout
         });
@@ -415,9 +419,12 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
             });
           }
         } else {
-          // Para outros índices (opcionais), permitir falha
+          // Para outros índices (opcionais), adicionar delay para evitar rate limiting
+          const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+          
           downloadPromises.push(
-            downloadAudioFromUrl(indexedUrls[i], i)
+            delay(2000) // 2 segundos de delay entre downloads
+              .then(() => downloadAudioFromUrl(indexedUrls[i], i))
               .then(file => {
                 indexedFiles[i] = file;
                 console.log(`✅ URL ${i} (opcional) convertida para arquivo: ${file.originalname}`);
