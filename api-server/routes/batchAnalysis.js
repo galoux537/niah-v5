@@ -405,8 +405,16 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     const maxIndex = Math.max(
       Math.max(...Object.keys(indexedFiles).map(Number), -1),
       Math.max(...Object.keys(indexedMetadata).map(Number), -1),
-      Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1)
+      Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
+      Math.max(...Object.keys(indexedUrls).map(Number), -1) // Incluir URLs no cálculo do maxIndex
     );
+    
+    console.log(`📊 Cálculo do maxIndex:`);
+    console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
+    console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
+    console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
+    console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
+    console.log(`  - maxIndex calculado:`, maxIndex);
     
     for (let i = 0; i <= maxIndex; i++) {
       organizedData.push({
@@ -416,6 +424,13 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         index: i
       });
     }
+    
+    console.log(`📋 organizedData criado:`, organizedData.map(item => ({
+      index: item.index,
+      hasFile: !!item.file,
+      hasMetadata: !!item.metadata,
+      hasPhone: !!item.phoneNumber
+    })));
     
     const files = organizedData.map(item => item.file);
     const { criteria, webhook, metadata, batch_name } = req.body;
@@ -434,9 +449,16 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     console.log(`  - audioFiles_0 presente: ${hasAudioFile0}`);
     console.log(`  - audioUrls_0 presente: ${hasAudioUrl0}`);
     console.log(`  - req.body keys:`, Object.keys(req.body));
+    console.log(`  - organizedData[0]:`, organizedData[0] ? {
+      hasFile: !!organizedData[0].file,
+      hasMetadata: !!organizedData[0].metadata,
+      hasPhone: !!organizedData[0].phoneNumber,
+      phoneNumber: organizedData[0].phoneNumber
+    } : 'undefined');
     
     // Regra: audioFiles_0 tem prioridade, se não existir, audioUrls_0 é obrigatório
     if (!hasAudioFile0 && !hasAudioUrl0) {
+      console.log(`❌ ERRO: Nenhuma fonte de áudio encontrada para índice 0`);
       return res.status(400).json({
         error: 'MISSING_AUDIO_SOURCE_0',
         message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.'
@@ -450,7 +472,18 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       delete indexedUrls[0];
     }
 
+    // Verificar se organizedData[0] existe antes de validar o telefone
+    if (!organizedData[0]) {
+      console.log(`❌ ERRO: organizedData[0] não existe`);
+      return res.status(400).json({
+        error: 'MISSING_DATA_INDEX_0',
+        message: 'Dados do índice 0 não foram encontrados na requisição'
+      });
+    }
+
     if (!organizedData[0].phoneNumber) {
+      console.log(`❌ ERRO: phone_number_0 não encontrado`);
+      console.log(`📋 organizedData[0]:`, organizedData[0]);
       return res.status(400).json({
         error: 'MISSING_PHONE_NUMBER_0',
         message: 'phone_number_0 é obrigatório quando audioFiles_0 ou audioUrls_0 é enviado'
