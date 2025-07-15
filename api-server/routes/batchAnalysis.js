@@ -251,13 +251,30 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     
     Object.keys(req.body).forEach(key => {
       console.log(`🔍 Verificando chave: ${key}`);
-      const urlMatch = key.match(/^audioUris?_(\d+)$/);
-      if (urlMatch) {
-        const index = parseInt(urlMatch[1]);
-        indexedUrls[index] = req.body[key];
-        console.log(`✅ URL ${index} encontrada: ${req.body[key]}`);
-      } else {
-        console.log(`❌ Chave ${key} não corresponde ao padrão audioUris?_`);
+      
+      // Testar múltiplos padrões para debug
+      const patterns = [
+        /^audioUris?_(\d+)$/,  // audioUrls_ ou audioUris_
+        /^audioUrls_(\d+)$/,   // apenas audioUrls_
+        /^audioUris_(\d+)$/,   // apenas audioUris_
+        /^audioUrl(\d+)$/,     // audioUrl sem underscore
+        /^audioUri(\d+)$/      // audioUri sem underscore
+      ];
+      
+      let matched = false;
+      for (let i = 0; i < patterns.length; i++) {
+        const urlMatch = key.match(patterns[i]);
+        if (urlMatch) {
+          const index = parseInt(urlMatch[1]);
+          indexedUrls[index] = req.body[key];
+          console.log(`✅ URL ${index} encontrada com padrão ${i}: ${req.body[key]}`);
+          matched = true;
+          break;
+        }
+      }
+      
+      if (!matched) {
+        console.log(`❌ Chave ${key} não corresponde a nenhum padrão de URL`);
       }
     });
     
@@ -448,6 +465,8 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     console.log(`📋 Validação de campos obrigatórios para índice 0:`);
     console.log(`  - audioFiles_0 presente: ${hasAudioFile0}`);
     console.log(`  - audioUrls_0 presente: ${hasAudioUrl0}`);
+    console.log(`  - indexedFiles[0]:`, indexedFiles[0]);
+    console.log(`  - indexedUrls[0]:`, indexedUrls[0]);
     console.log(`  - req.body keys:`, Object.keys(req.body));
     console.log(`  - organizedData[0]:`, organizedData[0] ? {
       hasFile: !!organizedData[0].file,
@@ -459,6 +478,12 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     // Regra: audioFiles_0 tem prioridade, se não existir, audioUrls_0 é obrigatório
     if (!hasAudioFile0 && !hasAudioUrl0) {
       console.log(`❌ ERRO: Nenhuma fonte de áudio encontrada para índice 0`);
+      console.log(`🔍 DEBUG: Verificando req.body diretamente:`);
+      Object.keys(req.body).forEach(key => {
+        if (key.includes('audio')) {
+          console.log(`  - ${key}: ${req.body[key]}`);
+        }
+      });
       return res.status(400).json({
         error: 'MISSING_AUDIO_SOURCE_0',
         message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.'
