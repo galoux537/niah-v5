@@ -26,7 +26,8 @@ const API_BASE = (import.meta as any).env.VITE_API_URL || '';
 
 
 interface BatchFile {
-  file: File;
+  file: File | null;
+  audioUrl: string | null;
   metadata: {
     name?: string;
     email?: string;
@@ -112,6 +113,8 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
   const [isLoadingCriteria, setIsLoadingCriteria] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [batchName, setBatchName] = useState('');
+  const [newAudioUrl, setNewAudioUrl] = useState('');
+  const [isAddingUrl, setIsAddingUrl] = useState(false);
 
   // Carregar critérios da empresa
   useEffect(() => {
@@ -282,6 +285,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
     const selectedFiles = Array.from(event.target.files || []);
     const newFiles = selectedFiles.map(file => ({
       file,
+      audioUrl: null,
       metadata: {
         name: '',
         email: '',
@@ -300,6 +304,41 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
     if (event.target) {
       event.target.value = '';
     }
+  };
+
+  const handleAddAudioUrl = () => {
+    if (!newAudioUrl.trim()) {
+      alert('Por favor, insira uma URL válida');
+      return;
+    }
+
+    // Validar se é uma URL válida
+    try {
+      new URL(newAudioUrl);
+    } catch {
+      alert('Por favor, insira uma URL válida');
+      return;
+    }
+
+    const newFile: BatchFile = {
+      file: null,
+      audioUrl: newAudioUrl.trim(),
+      metadata: {
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        department: '',
+        callType: '',
+        priority: ''
+      },
+      campaign: '',
+      agent: ''
+    };
+
+    setFiles(prev => [...prev, newFile]);
+    setNewAudioUrl('');
+    setIsAddingUrl(false);
   };
 
   const removeFile = (index: number) => {
@@ -327,7 +366,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
 
   const startBatchAnalysis = async () => {
     if (files.length === 0) {
-      alert('Adicione pelo menos um arquivo de áudio');
+      alert('Adicione pelo menos um arquivo de áudio ou URL');
       return;
     }
 
@@ -392,8 +431,12 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
 
       // Adicionar arquivos e metadados individuais
       files.forEach((batchFile, index) => {
-        // Arquivo de áudio
-        formData.append(`audioFiles_${index}`, batchFile.file);
+        // Arquivo de áudio ou URL
+        if (batchFile.file) {
+          formData.append(`audioFiles_${index}`, batchFile.file);
+        } else if (batchFile.audioUrl) {
+          formData.append(`audioUrls_${index}`, batchFile.audioUrl);
+        }
         
         // Telefone específico do arquivo
         formData.append(`phone_number_${index}`, batchFile.metadata.phone || '');
@@ -433,7 +476,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
       // For brevity, append batch_name to FormData.
       formData.append('batch_name', batchName.trim());
 
-      console.log(`🚀 Enviando ${files.length} arquivos para análise em lote`);
+      console.log(`🚀 Enviando ${files.length} arquivos/URLs para análise em lote`);
       console.log(`📊 Critério selecionado: ${selectedCriteria.name}`);
       console.log(`🏢 Empresa: ${company.name} (${company.id})`);
       console.log(`👤 Usuário JWT: ${authManager.getUser()?.name} (${authManager.getUser()?.email})`);
@@ -479,24 +522,19 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
         
         if (response.status === 401 || response.status === 403) {
           alert('❌ Erro de autenticação: Faça login novamente');
-        } else {
-          alert(`❌ Erro ${response.status}: ${errorText}`);
+          return;
+        }
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          alert(`❌ Erro na análise em lote:\n\n${errorData.message || errorData.error || 'Erro desconhecido'}`);
+        } catch {
+          alert(`❌ Erro na análise em lote:\n\n${errorText}`);
         }
       }
     } catch (error) {
       console.error('❌ Erro ao enviar lote:', error);
-      
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        alert(`❌ Erro de Conectividade\n\n` +
-              `Problema: Não foi possível conectar com o servidor API\n\n` +
-              `Soluções:\n` +
-              `1. Verifique se o servidor API está rodando (porta 3001)\n` +
-              `2. Execute: npm run start:api\n` +
-              `3. Verifique sua conexão com internet\n` +
-              `4. Desative temporariamente firewall/antivírus`);
-      } else {
-        alert(`Erro ao enviar lote para análise: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-      }
+      alert(`❌ Erro ao enviar lote:\n\n${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsUploading(false);
     }
@@ -508,6 +546,32 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileName = (batchFile: BatchFile) => {
+    if (batchFile.file) {
+      return batchFile.file.name;
+    } else if (batchFile.audioUrl) {
+      // Extrair nome do arquivo da URL
+      try {
+        const url = new URL(batchFile.audioUrl);
+        const pathname = url.pathname;
+        const filename = pathname.split('/').pop();
+        return filename || 'Áudio da URL';
+      } catch {
+        return 'Áudio da URL';
+      }
+    }
+    return 'Arquivo desconhecido';
+  };
+
+  const getFileSize = (batchFile: BatchFile) => {
+    if (batchFile.file) {
+      return formatFileSize(batchFile.file.size);
+    } else if (batchFile.audioUrl) {
+      return 'URL de áudio';
+    }
+    return 'N/A';
   };
 
   const getStatusIcon = (status: string) => {
@@ -574,27 +638,81 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
                 Upload de Arquivos de Áudio
               </h2>
 
-              <div 
-                className="border-2 border-dashed border-[#e1e9f4] rounded-lg p-8 text-center hover:border-[#3057f2] transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <FileAudio className="w-12 h-12 text-[#677c92] mx-auto mb-4" />
-                <p className="text-[#373753] font-medium mb-2">
-                  Clique para selecionar arquivos de áudio
-                </p>
-                <p className="text-[#677c92] text-sm">
-                  Formatos suportados: MP3, WAV | Máx: 25MB por arquivo | Sem limite de quantidade
-                </p>
-              </div>
+              <div className="space-y-4">
+                {/* Upload de Arquivos */}
+                <div 
+                  className="border-2 border-dashed border-[#e1e9f4] rounded-lg p-8 text-center hover:border-[#3057f2] transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <FileAudio className="w-12 h-12 text-[#677c92] mx-auto mb-4" />
+                  <p className="text-[#373753] font-medium mb-2">
+                    Clique para selecionar arquivos de áudio
+                  </p>
+                  <p className="text-[#677c92] text-sm">
+                    Formatos suportados: MP3, WAV | Máx: 25MB por arquivo | Sem limite de quantidade
+                  </p>
+                </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="audio/*,.mp3,.wav"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="audio/*,.mp3,.wav"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                {/* Separador */}
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-[#e1e9f4]"></div>
+                  <span className="px-4 text-[#677c92] text-sm">ou</span>
+                  <div className="flex-1 border-t border-[#e1e9f4]"></div>
+                </div>
+
+                {/* Adicionar URL de Áudio */}
+                <div className="space-y-3">
+                  {!isAddingUrl ? (
+                    <button
+                      onClick={() => setIsAddingUrl(true)}
+                      className="w-full border-2 border-dashed border-[#e1e9f4] rounded-lg p-4 text-center hover:border-[#3057f2] transition-colors text-[#373753] font-medium"
+                    >
+                      + Adicionar URL de Áudio
+                    </button>
+                  ) : (
+                    <div className="border border-[#e1e9f4] rounded-lg p-4 space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-[#373753] mb-1">
+                          URL do Áudio
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://exemplo.com/audio.mp3"
+                          value={newAudioUrl}
+                          onChange={(e) => setNewAudioUrl(e.target.value)}
+                          className="w-full px-3 py-2 border border-[#e1e9f4] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3057f2]"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddAudioUrl}
+                          className="px-4 py-2 bg-[#3057f2] text-white rounded-lg text-sm font-medium hover:bg-[#2a4fd8] transition-colors"
+                        >
+                          Adicionar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsAddingUrl(false);
+                            setNewAudioUrl('');
+                          }}
+                          className="px-4 py-2 border border-[#e1e9f4] text-[#373753] rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Nome do Lote */}
               <div className="mt-6">
@@ -622,11 +740,16 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
                             <FileAudio className="w-5 h-5 text-[#3057f2]" />
                             <div>
                               <p className="font-medium text-[#373753] text-sm">
-                                {batchFile.file.name}
+                                {getFileName(batchFile)}
                               </p>
                               <p className="text-[#677c92] text-xs">
-                                {formatFileSize(batchFile.file.size)}
+                                {getFileSize(batchFile)}
                               </p>
+                              {batchFile.audioUrl && (
+                                <p className="text-[#3057f2] text-xs truncate max-w-xs">
+                                  {batchFile.audioUrl}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <button

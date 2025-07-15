@@ -30,9 +30,11 @@ const BatchAnalysisDocumentation: React.FC = () => {
     criteria: '{"criteria_name":"Selecione um critério","criteriaId":"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"}',
     webhook: 'https://webhook.site/seu-id-unico',
     audioFiles_0: null as File | null,
+    audioUrls_0: '',
     phone_number_0: '5511999999999',
     metadata_0: '{"name":"Ana Oliveira","email":"ana.oliveira@empresaabc.com","phone":"11987654321"}',
     audioFiles_1: null as File | null,
+    audioUrls_1: '',
     phone_number_1: '5511888888888',
     metadata_1: '{"name":"Carlos Batista","email":"carlos@empresa.com","phone":"11999887766"}'
   });
@@ -286,10 +288,14 @@ const BatchAnalysisDocumentation: React.FC = () => {
   -F 'batch_name=${formData.batch_name}' \\
   -F 'criteria=${displayCriteria}' \\
   -F 'webhook=${formData.webhook}' \\${formData.audioFiles_0 ? `
-  -F "audioFiles_0=@${formData.audioFiles_0.name}" \\` : ''}
+  -F "audioFiles_0=@${formData.audioFiles_0.name}" \\` : formData.audioUrls_0 ? `
+  -F 'audioUrls_0=${formData.audioUrls_0}' \\` : ''}
   -F 'phone_number_0=${formData.phone_number_0}' \\
   -F 'metadata_0=${formData.metadata_0}'${formData.audioFiles_1 ? ` \\
   -F "audioFiles_1=@${formData.audioFiles_1.name}" \\
+  -F 'phone_number_1=${formData.phone_number_1}' \\
+  -F 'metadata_1=${formData.metadata_1}'` : formData.audioUrls_1 ? ` \\
+  -F 'audioUrls_1=${formData.audioUrls_1}' \\
   -F 'phone_number_1=${formData.phone_number_1}' \\
   -F 'metadata_1=${formData.metadata_1}'` : ''}`,
       
@@ -306,9 +312,13 @@ files = {${formData.audioFiles_0 ? `
 data = {
     "batch_name": "${formData.batch_name}",
     "criteria": "${displayCriteria}",
-    "webhook": "${formData.webhook}",
+    "webhook": "${formData.webhook}"${formData.audioUrls_0 ? `,
+    "audioUrls_0": "${formData.audioUrls_0}"` : ''},
     "phone_number_0": "${formData.phone_number_0}",
     "metadata_0": "${formData.metadata_0}"${formData.audioFiles_1 ? `,
+    "phone_number_1": "${formData.phone_number_1}",
+    "metadata_1": "${formData.metadata_1}"` : formData.audioUrls_1 ? `,
+    "audioUrls_1": "${formData.audioUrls_1}",
     "phone_number_1": "${formData.phone_number_1}",
     "metadata_1": "${formData.metadata_1}"` : ''}
 }
@@ -321,10 +331,14 @@ print(response.json())`,
 formData.append('batch_name', '${formData.batch_name}');
 formData.append('criteria', '${displayCriteria}');
 formData.append('webhook', '${formData.webhook}');${formData.audioFiles_0 ? `
-formData.append('audioFiles_0', document.querySelector('#file0').files[0]);` : ''}
+formData.append('audioFiles_0', document.querySelector('#file0').files[0]);` : formData.audioUrls_0 ? `
+formData.append('audioUrls_0', '${formData.audioUrls_0}');` : ''}
 formData.append('phone_number_0', '${formData.phone_number_0}');
 formData.append('metadata_0', '${formData.metadata_0}');${formData.audioFiles_1 ? `
 formData.append('audioFiles_1', document.querySelector('#file1').files[0]);
+formData.append('phone_number_1', '${formData.phone_number_1}');
+formData.append('metadata_1', '${formData.metadata_1}');` : formData.audioUrls_1 ? `
+formData.append('audioUrls_1', '${formData.audioUrls_1}');
 formData.append('phone_number_1', '${formData.phone_number_1}');
 formData.append('metadata_1', '${formData.metadata_1}');` : ''}
 
@@ -346,11 +360,15 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 $postFields = [
   'batch_name' => '${formData.batch_name}',
   'criteria' => '${displayCriteria}',
-  'webhook' => '${formData.webhook}',${formData.audioFiles_0 ? `
-  'audioFiles_0' => new CURLFile('${formData.audioFiles_0.name}'),` : ''}
+  'webhook' => '${formData.webhook}'${formData.audioFiles_0 ? `,
+  'audioFiles_0' => new CURLFile('${formData.audioFiles_0.name}')` : formData.audioUrls_0 ? `,
+  'audioUrls_0' => '${formData.audioUrls_0}'` : ''},
   'phone_number_0' => '${formData.phone_number_0}',
   'metadata_0' => '${formData.metadata_0}'${formData.audioFiles_1 ? `,
   'audioFiles_1' => new CURLFile('${formData.audioFiles_1.name}'),
+  'phone_number_1' => '${formData.phone_number_1}',
+  'metadata_1' => '${formData.metadata_1}'` : formData.audioUrls_1 ? `,
+  'audioUrls_1' => '${formData.audioUrls_1}',
   'phone_number_1' => '${formData.phone_number_1}',
   'metadata_1' => '${formData.metadata_1}'` : ''}
 ];
@@ -389,12 +407,18 @@ echo $response;`
       
       if (formData.audioFiles_0) {
         formDataToSend.append('audioFiles_0', formData.audioFiles_0);
+      } else if (formData.audioUrls_0) {
+        formDataToSend.append('audioUrls_0', formData.audioUrls_0);
       }
       formDataToSend.append('phone_number_0', formData.phone_number_0);
       formDataToSend.append('metadata_0', formData.metadata_0);
       
       if (formData.audioFiles_1) {
         formDataToSend.append('audioFiles_1', formData.audioFiles_1);
+        formDataToSend.append('phone_number_1', formData.phone_number_1);
+        formDataToSend.append('metadata_1', formData.metadata_1);
+      } else if (formData.audioUrls_1) {
+        formDataToSend.append('audioUrls_1', formData.audioUrls_1);
         formDataToSend.append('phone_number_1', formData.phone_number_1);
         formDataToSend.append('metadata_1', formData.metadata_1);
       }
@@ -628,6 +652,17 @@ echo $response;`
                       </div>
                     </div>
                     
+                    {/* audioUrls_0 - Nova funcionalidade */}
+                    <div className="flex items-center gap-4">
+                      <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-blue-100 rounded-md items-center text-blue-600 text-sm font-mono">audioUrls_0</span></div>
+                      <Input
+                        value={formData.audioUrls_0 || ''}
+                        onChange={(e) => handleInputChange('audioUrls_0', e.target.value)}
+                        placeholder="https://exemplo.com/audio.mp3"
+                        className="flex-1 h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px]"
+                      />
+                    </div>
+                    
                     {/* phone_number_0 */}
                     <div className="flex items-center gap-4">
                       <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-slate-200 rounded-md items-center text-slate-500 text-sm font-mono">phone_number_0*</span></div>
@@ -716,6 +751,17 @@ echo $response;`
                           </div>
                         )}
                       </div>
+                    </div>
+                    
+                    {/* audioUrls_1 - Nova funcionalidade */}
+                    <div className="flex items-center gap-4">
+                      <div className="w-40 flex"><span className="inline-flex px-2 h-7 bg-blue-100 rounded-md items-center text-blue-600 text-sm font-mono">audioUrls_1</span></div>
+                      <Input
+                        value={formData.audioUrls_1 || ''}
+                        onChange={(e) => handleInputChange('audioUrls_1', e.target.value)}
+                        placeholder="https://exemplo.com/audio.mp3"
+                        className="flex-1 h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px]"
+                      />
                     </div>
                     
                     {/* phone_number_1 */}

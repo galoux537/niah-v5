@@ -233,9 +233,11 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         ? (avgScores.reduce((sum, list) => sum + parseFloat(list.average), 0) / avgScores.length).toFixed(1)
         : '0.0';
       
-      const callsInAttention = processedLists
-        .filter(list => parseFloat(list.average) < 4)
-        .reduce((sum, list) => sum + list.totalCalls, 0);
+      // Calcular ligações em atenção (notas entre 4.0 e 6.9)
+      const callsInAttention = calls.filter(call => {
+        const score = call.overall_score || 0;
+        return score >= 4 && score < 7;
+      }).length;
 
       // Calcular performance geral baseada em dados reais
       let globalGood = 0, globalNeutral = 0, globalBad = 0;

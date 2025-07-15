@@ -232,6 +232,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     const indexedFiles = [];
     const indexedMetadata = {};
     const indexedPhoneNumbers = {};
+    const indexedUrls = [];
     
     // Coletar arquivos de áudio indexados
     if (req.files) {
@@ -243,6 +244,15 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         }
       });
     }
+    
+    // Coletar URLs de áudio indexadas
+    Object.keys(req.body).forEach(key => {
+      const urlMatch = key.match(/^audioUrls_(\d+)$/);
+      if (urlMatch) {
+        const index = parseInt(urlMatch[1]);
+        indexedUrls[index] = req.body[key];
+      }
+    });
     
     // Coletar metadados indexados
     Object.keys(req.body).forEach(key => {
@@ -258,6 +268,86 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         indexedPhoneNumbers[index] = req.body[key];
       }
     });
+    
+    // Função para baixar áudio de URL
+    const downloadAudioFromUrl = async (url, index) => {
+      try {
+        console.log(`🌐 Baixando áudio da URL: ${url}`);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; NIAH-Audio-Downloader/1.0)'
+          },
+          timeout: 30000 // 30 segundos timeout
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.startsWith('audio/')) {
+          throw new Error(`URL não retorna um arquivo de áudio válido. Content-Type: ${contentType}`);
+        }
+        
+        const buffer = await response.arrayBuffer();
+        const audioBuffer = Buffer.from(buffer);
+        
+        // Extrair nome do arquivo da URL
+        const urlObj = new URL(url);
+        const pathname = urlObj.pathname;
+        let filename = pathname.split('/').pop();
+        
+        // Se não conseguir extrair nome, usar padrão
+        if (!filename || filename === '' || !filename.includes('.')) {
+          const extension = contentType.split('/')[1] || 'mp3';
+          filename = `audio_from_url_${index}.${extension}`;
+        }
+        
+        // Criar objeto de arquivo similar ao multer
+        const file = {
+          fieldname: `audioFiles_${index}`,
+          originalname: filename,
+          encoding: '7bit',
+          mimetype: contentType,
+          buffer: audioBuffer,
+          size: audioBuffer.length
+        };
+        
+        console.log(`✅ Áudio baixado com sucesso: ${filename} (${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB)`);
+        return file;
+        
+      } catch (error) {
+        console.error(`❌ Erro ao baixar áudio da URL ${url}:`, error.message);
+        throw new Error(`Falha ao baixar áudio da URL: ${error.message}`);
+      }
+    };
+    
+    // Baixar áudios de URLs
+    const downloadPromises = [];
+    for (let i = 0; i < indexedUrls.length; i++) {
+      if (indexedUrls[i]) {
+        downloadPromises.push(
+          downloadAudioFromUrl(indexedUrls[i], i)
+            .then(file => {
+              indexedFiles[i] = file;
+              console.log(`✅ URL ${i} convertida para arquivo: ${file.originalname}`);
+            })
+            .catch(error => {
+              console.error(`❌ Falha na conversão da URL ${i}:`, error.message);
+              throw error;
+            })
+        );
+      }
+    }
+    
+    // Aguardar todos os downloads
+    if (downloadPromises.length > 0) {
+      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs...`);
+      await Promise.all(downloadPromises);
+      console.log(`✅ Todos os downloads concluídos`);
+    }
     
     // Organizar dados por índice
     const organizedData = [];
@@ -295,14 +385,14 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     if (!organizedData[0] || !organizedData[0].file) {
       return res.status(400).json({
         error: 'MISSING_AUDIO_FILE_0',
-        message: 'audioFiles_0 é obrigatório na requisição'
+        message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição'
       });
     }
 
     if (!organizedData[0].phoneNumber) {
       return res.status(400).json({
         error: 'MISSING_PHONE_NUMBER_0',
-        message: 'phone_number_0 é obrigatório quando audioFiles_0 é enviado'
+        message: 'phone_number_0 é obrigatório quando audioFiles_0 ou audioUrls_0 é enviado'
       });
     }
     
@@ -332,7 +422,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         errors: [{
           type: 'MISSING_FILE',
           message: 'Arquivo de áudio não foi enviado',
-          details: `Esperado campo audioFiles_${item.index} mas não foi encontrado ou não chegou no servidor`
+          details: `Esperado campo audioFiles_${item.index} ou audioUrls_${item.index} mas não foi encontrado ou não chegou no servidor`
         }],
         warnings: [],
         fileInfo: {
