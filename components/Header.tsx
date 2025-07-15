@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Building2, LogOut, User, Users } from 'lucide-react';
 import { Page } from '../src/lib/navigation';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import { MobileMenu } from './MobileMenu';
 
 interface HeaderProps {
   currentPage: Page;
@@ -38,22 +39,13 @@ export function Header({ currentPage, onPageChange, onBack }: HeaderProps) {
             <img src={logoBlue} alt="Logo" width={73} height={22} />
           </button>
 
-          {/* Botão Voltar - aparece apenas em páginas de detalhes */}
-          {onBack && (currentPage === 'list-detail' || currentPage === 'criteria-detail' || currentPage === 'criteria-create') && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="ml-4 p-2 text-[#677c92] hover:text-[#373753] hover:bg-[#f9fafc] rounded-lg transition-colors"
-              title="Voltar"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
 
-          {/* Informações da Empresa e Logout */}
-          <div className="flex items-center gap-4">
+
+          {/* Menu Mobile */}
+          <MobileMenu currentPage={currentPage} onPageChange={onPageChange} onBack={onBack} />
+
+          {/* Informações da Empresa e Logout (desktop) */}
+          <div className="hidden lg:flex items-center gap-4">
             <div className="text-right">
               <div className="text-[#373753] text-sm font-medium flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-[#677c92]" />
@@ -95,8 +87,8 @@ export function Header({ currentPage, onPageChange, onBack }: HeaderProps) {
         </div>
       </div>
 
-      {/* Navigation Tabs - CENTRALIZADAS */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
+      {/* Navigation Tabs - CENTRALIZADAS (desktop) */}
+      <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 bottom-0">
         <nav className="flex space-x-8">
           {tabs.map((tab) => (
             <button

@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import { ArrowLeft, AlertTriangle, RefreshCw, User, Building2, Plus, Edit, Trash2, MoreVertical, Database, Copy, Search, Pen, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../src/lib/supabase';
+import { useBreakpoint } from '../src/lib/responsive';
 
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -105,6 +106,7 @@ SELECT 'Configuração de subcritérios concluída com sucesso!' as status;`;
 
 export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPageProps) {
   const { companyId, company } = useAuth();
+  const breakpoint = useBreakpoint();
   const [criteria, setCriteria] = useState<Criteria | null>(null);
   const [subCriteria, setSubCriteria] = useState<SubCriteria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -710,97 +712,77 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
           </Button>
         </div>
 
-        {/* Table Header */}
-        <div className="bg-[#f0f4fa] px-6 py-3">
-          <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
-            <div className="w-12">Cor</div>
-            <div className="w-48">Nome</div>
-            <div className="flex-1 pl-4">Descrição</div>
-            <div className="w-12"></div>
+        {/* Tabela com scroll horizontal */}
+        <div className="overflow-x-auto">
+          {/* Table Header */}
+          <div className="bg-[#f0f4fa] px-6 py-3 min-w-[600px]">
+            <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
+              <div className="w-12 flex-shrink-0">Cor</div>
+              <div className="w-48 flex-shrink-0">Nome</div>
+              <div className="flex-1 pl-4 min-w-[300px] flex-shrink-0">Descrição</div>
+              <div className="w-12 flex-shrink-0"></div>
+            </div>
           </div>
-        </div>
-        {/* Table Rows */}
-        <div>
-          {subCriteriaTableExists && subCriteria
-            .filter(sc =>
-              sc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (sc.description && sc.description.toLowerCase().includes(searchTerm.toLowerCase()))
-            )
-            .map((subCrit) => (
-            <div
-              key={subCrit.id}
-              className="border-b border-[#e1e9f4] px-6 py-2 hover:bg-gray-50 group relative"
-            >
-              <div className="flex items-center justify-between relative z-10">
-                <div className="w-12 flex items-center">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: subCrit.color }}></div>
-                </div>
-                <div className="w-48 flex items-center">
-                  <span className="text-[#373753] text-base font-medium">{subCrit.name}</span>
-                </div>
-                <div className="flex-1 flex items-center pl-4">
-                  <span className="text-[#677c92] text-base">{subCrit.description}</span>
-                </div>
-                <div className="w-12 flex justify-center relative z-30 pointer-events-auto">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-[#677c92] hover:text-[#373753] opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-32">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditSheet(subCrit);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSubCriteriaToDelete(subCrit);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="cursor-pointer text-[#dc2f1c] hover:text-[#dc2f1c] hover:bg-[#fef2f2]"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </div>
-          ))}
-          {(subCriteria.length === 0 || !subCriteriaTableExists) && (
-            <div className="px-6 py-8 text-center">
-              <div className="text-[#677c92] text-base">
-                {!subCriteriaTableExists 
-                  ? 'Configure a funcionalidade de subcritérios para começar'
-                  : 'Nenhum critério adicionado ainda'
-                }
-              </div>
-              <Button
-                onClick={openCreateSheet}
-                variant="ghost"
-                className="mt-2 text-[#3057f2] hover:text-[#2545d9]"
+          
+          {/* Table Rows */}
+          <div className="min-w-[600px]">
+            {subCriteriaTableExists && subCriteria
+              .filter(sc =>
+                sc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (sc.description && sc.description.toLowerCase().includes(searchTerm.toLowerCase()))
+              )
+              .map((subCrit) => (
+              <div
+                key={subCrit.id}
+                className="border-b border-[#e1e9f4] px-6 py-2 hover:bg-gray-50 group relative"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                {!subCriteriaTableExists 
-                  ? 'Configurar subcritérios'
-                  : 'Adicionar primeiro critério'
-                }
-              </Button>
-            </div>
-          )}
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="w-12 flex items-center flex-shrink-0">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: subCrit.color }}></div>
+                  </div>
+                  <div className="w-48 flex items-center flex-shrink-0">
+                    <span className="text-[#373753] text-base font-medium truncate" title={subCrit.name}>{subCrit.name}</span>
+                  </div>
+                  <div className="flex-1 flex items-center pl-4 min-w-[300px] flex-shrink-0">
+                    <span className="text-[#677c92] text-base truncate" title={subCrit.description}>{subCrit.description}</span>
+                  </div>
+                  <div className="w-12 flex justify-center relative z-30 pointer-events-auto flex-shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-8 w-8 p-0 text-[#677c92] hover:text-[#373753] opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuItem
+                          onClick={() => openEditSheet(subCrit)}
+                          className="cursor-pointer"
+                        >
+                          <Edit className="h-4 w-4 mr-2 text-[#677c92]" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSubCriteriaToDelete(subCrit);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="cursor-pointer text-[#dc2f1c] hover:text-[#dc2f1c] hover:bg-[#fef2f2]"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <div className="bg-[#FFFFFF] border border-[#e1e9f4] rounded-lg p-4">
@@ -821,126 +803,141 @@ export function CriteriaDetailPage({ criteriaId, onBack }: CriteriaDetailPagePro
           {/* Overlay */}
           <div className="fixed inset-0 bg-black/20 z-30 backdrop-blur-sm" onClick={() => setIsSheetOpen(false)} />
           
-          {/* Modal */}
-          <div className="fixed right-0 top-11 bottom-0 w-[520px] bg-[#f9fafc] border-l border-[#e1e9f4] shadow-lg z-40">
-            <div className="h-full flex flex-col p-6 overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <button 
-                onClick={() => setIsSheetOpen(false)}
-                className="w-10 h-10 bg-white border border-[#e1e9f4] rounded-full flex items-center justify-center shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]"
-              >
-                <ArrowLeft className="h-4 w-4 text-[#373753]" />
-              </button>
-              <div className="text-[#373753] text-base">Critérios</div>
-            </div>
-
-            {/* Content */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
-                <h3 className="text-lg font-medium text-[#373753] mb-4">Detalhes do subcritério</h3>
-                <div className="border-b border-[#e1e9f4] -mx-4 mb-4" />
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name" className="text-sm font-medium text-[#373753] mb-2 block">Nome <span className="text-red-500">*</span></Label>
-                      <Input
-                        id="name"
-                        value={newSubCriteria.name}
-                        onChange={(e) => setNewSubCriteria({ ...newSubCriteria, name: e.target.value })}
-                        placeholder="Abordagem"
-                        className="h-10 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="color" className="text-sm font-medium text-[#373753] mb-2 block">Cor <span className="text-red-500">*</span></Label>
-                      <Select
-                        value={newSubCriteria.color}
-                        onValueChange={(value) => setNewSubCriteria({ ...newSubCriteria, color: value })}
-                      >
-                        <SelectTrigger className="h-10 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {colorOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${option.color}`}></div>
-                                {option.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="description" className="text-sm font-medium text-[#373753] mb-2 block">Descrição <span className="text-red-500">*</span></Label>
-                    <Textarea
-                      id="description"
-                      value={newSubCriteria.description}
-                      onChange={(e) => setNewSubCriteria({ ...newSubCriteria, description: e.target.value })}
-                      placeholder="Termos de saudação"
-                      className="text-sm min-h-[80px]"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
-                <h3 className="text-lg font-medium text-[#373753] mb-4">Complementos da IA</h3>
-                <div className="border-b border-[#e1e9f4] -mx-4 mb-4" />
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="keywords" className="text-sm font-medium text-[#373753] mb-2 block">Palavra chave</Label>
-                    <div className="flex flex-wrap items-center gap-1 border border-[#e1e9f4] bg-white px-3 py-2 rounded-lg min-h-[40px] focus-within:border-[#3057f2] focus-within:ring-1 focus-within:ring-[#3057f2]/20">
-                      {newSubCriteria.keywords.map((kw, idx) => (
-                        <Badge key={idx} variant="secondary" className="bg-[#e6f0ff] text-[#2563eb] px-2 py-0.5 text-xs font-medium flex items-center gap-1 border-none rounded-[6px]">
-                          {kw}
-                          <button type="button" onClick={() => handleRemoveKeyword(kw)} className="ml-1 text-[#2563eb] hover:text-[#dc2f1c]">×</button>
-                        </Badge>
-                      ))}
-                      <input
-                        type="text"
-                        className="flex-1 border-none outline-none bg-transparent text-sm px-1 min-w-[60px] h-6"
-                        placeholder="Digite e pressione Enter"
-                        value={keywordInput}
-                        onChange={e => setKeywordInput(e.target.value)}
-                        onKeyDown={handleAddKeyword}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="ideal-phrase" className="text-sm font-medium text-[#373753] mb-2 block">Frase ideal</Label>
-                    <Textarea
-                      id="ideal-phrase"
-                      value={newSubCriteria.idealPhrase}
-                      onChange={(e) => setNewSubCriteria({ ...newSubCriteria, idealPhrase: e.target.value })}
-                      className="text-sm min-h-[80px]"
-                      placeholder="Exemplo de frase ideal para IA"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-3 pt-2">
-                <Button
-                  onClick={editingSubCriteria ? handleEditSubCriteria : handleCreateSubCriteria}
-                  disabled={saving || !newSubCriteria.name.trim() || !newSubCriteria.description.trim()}
-                  className="bg-[#3057f2] text-white hover:bg-[#2545d9] rounded-lg h-12 text-base font-medium shadow-none"
-                >
-                  {saving ? 'Salvando...' : editingSubCriteria ? 'Salvar' : 'Criar'}
-                </Button>
-                <Button
+          {/* Modal Responsivo */}
+          <div className={`fixed right-0 top-11 bottom-0 bg-[#f9fafc] border-l border-[#e1e9f4] shadow-lg z-40 transition-all duration-300 ${
+            breakpoint.isMobile ? 'w-full' : 'w-[520px]'
+          }`}>
+            <div className="h-full flex flex-col overflow-y-auto">
+              {/* Header */}
+              <div className={`flex items-center gap-4 p-6 border-b border-[#e1e9f4] ${
+                breakpoint.isMobile ? 'px-4' : 'px-6'
+              }`}>
+                <button 
                   onClick={() => setIsSheetOpen(false)}
-                  variant="ghost"
-                  className="text-[#677c92] hover:text-[#373753] rounded-lg h-10 text-sm"
+                  className="w-10 h-10 bg-white border border-[#e1e9f4] rounded-full flex items-center justify-center shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]"
                 >
-                  Cancelar
-                </Button>
+                  <ArrowLeft className="h-4 w-4 text-[#373753]" />
+                </button>
+                <div className="text-[#373753] text-base">
+                  {editingSubCriteria ? 'Editar Subcritério' : 'Novo Subcritério'}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${
+                breakpoint.isMobile ? 'px-4' : 'px-6'
+              }`}>
+                <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
+                  <h3 className="text-lg font-medium text-[#373753] mb-4">Detalhes do subcritério</h3>
+                  <div className="border-b border-[#e1e9f4] -mx-4 mb-4" />
+                  <div className="space-y-4">
+                    <div className={`grid gap-4 ${
+                      breakpoint.isMobile ? 'grid-cols-1' : 'grid-cols-2'
+                    }`}>
+                      <div>
+                        <Label htmlFor="name" className="text-sm font-medium text-[#373753] mb-2 block">Nome <span className="text-red-500">*</span></Label>
+                        <Input
+                          id="name"
+                          value={newSubCriteria.name}
+                          onChange={(e) => setNewSubCriteria({ ...newSubCriteria, name: e.target.value })}
+                          placeholder="Abordagem"
+                          className="h-10 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="color" className="text-sm font-medium text-[#373753] mb-2 block">Cor <span className="text-red-500">*</span></Label>
+                        <Select
+                          value={newSubCriteria.color}
+                          onValueChange={(value) => setNewSubCriteria({ ...newSubCriteria, color: value })}
+                        >
+                          <SelectTrigger className="h-10 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {colorOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full ${option.color}`}></div>
+                                  {option.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="description" className="text-sm font-medium text-[#373753] mb-2 block">Descrição <span className="text-red-500">*</span></Label>
+                      <Textarea
+                        id="description"
+                        value={newSubCriteria.description}
+                        onChange={(e) => setNewSubCriteria({ ...newSubCriteria, description: e.target.value })}
+                        placeholder="Termos de saudação"
+                        className="text-sm min-h-[80px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
+                  <h3 className="text-lg font-medium text-[#373753] mb-4">Complementos da IA</h3>
+                  <div className="border-b border-[#e1e9f4] -mx-4 mb-4" />
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="keywords" className="text-sm font-medium text-[#373753] mb-2 block">Palavra chave</Label>
+                      <div className="flex flex-wrap items-center gap-1 border border-[#e1e9f4] bg-white px-3 py-2 rounded-lg min-h-[40px] focus-within:border-[#3057f2] focus-within:ring-1 focus-within:ring-[#3057f2]/20">
+                        {newSubCriteria.keywords.map((kw, idx) => (
+                          <Badge key={idx} variant="secondary" className="bg-[#e6f0ff] text-[#2563eb] px-2 py-0.5 text-xs font-medium flex items-center gap-1 border-none rounded-[6px]">
+                            {kw}
+                            <button type="button" onClick={() => handleRemoveKeyword(kw)} className="ml-1 text-[#2563eb] hover:text-[#dc2f1c]">×</button>
+                          </Badge>
+                        ))}
+                        <input
+                          type="text"
+                          className="flex-1 border-none outline-none bg-transparent text-sm px-1 min-w-[60px] h-6"
+                          placeholder="Digite e pressione Enter"
+                          value={keywordInput}
+                          onChange={e => setKeywordInput(e.target.value)}
+                          onKeyDown={handleAddKeyword}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="ideal-phrase" className="text-sm font-medium text-[#373753] mb-2 block">Frase ideal</Label>
+                      <Textarea
+                        id="ideal-phrase"
+                        value={newSubCriteria.idealPhrase}
+                        onChange={(e) => setNewSubCriteria({ ...newSubCriteria, idealPhrase: e.target.value })}
+                        className="text-sm min-h-[80px]"
+                        placeholder="Exemplo de frase ideal para IA"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer com botões */}
+              <div className={`border-t border-[#e1e9f4] p-6 ${
+                breakpoint.isMobile ? 'px-4' : 'px-6'
+              }`}>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={editingSubCriteria ? handleEditSubCriteria : handleCreateSubCriteria}
+                    disabled={saving || !newSubCriteria.name.trim() || !newSubCriteria.description.trim()}
+                    className="bg-[#3057f2] text-white hover:bg-[#2545d9] rounded-lg h-12 text-base font-medium shadow-none"
+                  >
+                    {saving ? 'Salvando...' : editingSubCriteria ? 'Salvar' : 'Criar'}
+                  </Button>
+                  <Button
+                    onClick={() => setIsSheetOpen(false)}
+                    variant="ghost"
+                    className="text-[#677c92] hover:text-[#373753] rounded-lg h-10 text-sm"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </>
       )}

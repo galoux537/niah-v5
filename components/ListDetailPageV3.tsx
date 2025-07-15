@@ -544,62 +544,65 @@ export function ListDetailPageV3({ listId, listName, onBack }: ListDetailPageV3P
   }
 
   return (
-    <div className="px-6 pb-6">
+    <div className="px-4 md:px-6 pb-6">
       {/* Header com informações do critério */}
-      <div className="flex items-center gap-4 mb-6">
-        <button 
-          onClick={onBack}
-          className="w-10 h-10 bg-white border border-[#e1e9f4] rounded-full flex items-center justify-center shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]"
-        >
-          <ArrowLeft className="h-4 w-4 text-[#373753]" />
-        </button>
-        <div className="flex-1">
-          <div className="text-[#677c92] text-xs uppercase tracking-wide">Lote</div>
-          <div className="flex items-center gap-2">
-            {isEditingName ? (
-              <input
-                autoFocus
-                value={currentName}
-                onChange={(e) => setCurrentName(e.target.value)}
-                onBlur={handleNameSave}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleNameSave();
-                  }
-                }}
-                className="text-[#373753] text-lg font-medium tracking-tight border border-[#e1e9f4] rounded px-2 py-1 w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-[#3057f2]"
-              />
-            ) : (
-              <>
-                <div className="text-[#373753] text-lg font-medium tracking-tight">{currentName}</div>
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  className="text-[#677c92] hover:text-[#373753]"
-                  title="Editar nome do lote"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              </>
-            )}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <button 
+            onClick={onBack}
+            className="w-10 h-10 bg-white border border-[#e1e9f4] rounded-full flex items-center justify-center shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] flex-shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4 text-[#373753]" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="text-[#677c92] text-xs uppercase tracking-wide">Lote</div>
+            <div className="flex items-center gap-2">
+              {isEditingName ? (
+                <input
+                  autoFocus
+                  value={currentName}
+                  onChange={(e) => setCurrentName(e.target.value)}
+                  onBlur={handleNameSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleNameSave();
+                    }
+                  }}
+                  className="text-[#373753] text-lg font-medium tracking-tight border border-[#e1e9f4] rounded px-2 py-1 w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-[#3057f2]"
+                />
+              ) : (
+                <>
+                  <div className="text-[#373753] text-lg font-medium tracking-tight truncate">{currentName}</div>
+                  <button
+                    onClick={() => setIsEditingName(true)}
+                    className="text-[#677c92] hover:text-[#373753] flex-shrink-0"
+                    title="Editar nome do lote"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <button
           onClick={handleExportCSV}
-          className="bg-[#3057f2] text-white px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-[#2545d9] transition-colors"
+          className="bg-[#3057f2] text-white px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-[#2545d9] transition-colors w-full sm:w-auto justify-center"
           title="Exportar CSV do lote"
         >
           <Download className="h-4 w-4" />
-          Exportar CSV
+          <span className="hidden sm:inline">Exportar CSV</span>
+          <span className="sm:hidden">Exportar</span>
         </button>
       </div>
 
       {/* Média, Ligações em Atenção e Geral + Gráfico */}
-      <div className="grid grid-cols-12 gap-6 items-start mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start mb-6">
         {/* Lado esquerdo - Cards empilhados (7 colunas) */}
-        <div className="col-span-7 flex flex-col gap-6">
+        <div className="lg:col-span-7 flex flex-col gap-4 lg:gap-6">
           {/* Primeira linha - Média, Ligações em Atenção e Ligações com Falha */}
-          <div className="flex gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:flex gap-4 lg:gap-6">
             {/* Média */}
             <div className="flex-1 bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
               <div className="flex items-center gap-4">
@@ -717,15 +720,15 @@ export function ListDetailPageV3({ listId, listName, onBack }: ListDetailPageV3P
         </div>
 
         {/* Lado direito - Gráfico de Critérios (5 colunas) */}
-        <div className="col-span-5">
+        <div className="lg:col-span-5">
           <CriteriaChart criteria={criteriaScores} />
         </div>
       </div>
 
       {/* Calls Table */}
       <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]">
-        <div className="px-6 py-3 flex items-center justify-between">
-          <div className="relative flex-1 max-w-sm">
+        <div className="px-4 md:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-sm w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#677c92]" />
             <input
               type="text"
@@ -735,84 +738,87 @@ export function ListDetailPageV3({ listId, listName, onBack }: ListDetailPageV3P
               className="w-full pl-10 pr-4 py-2 text-sm border-0 rounded-lg focus:outline-none bg-transparent"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs bg-[#f0f4fa] px-2 py-1 rounded whitespace-nowrap">
               {formattedCalls.length} {formattedCalls.length === 1 ? 'ligação' : 'ligações'}
               {searchTerm && calls.length !== formattedCalls.length && (
                 <span className="text-[#677c92]"> de {calls.length}</span>
               )}
             </span>
-          <button
-            onClick={handleRetry}
-            className="text-[#677c92] hover:text-[#373753] p-1"
-            title="Recarregar ligações"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
+            <button
+              onClick={handleRetry}
+              className="text-[#677c92] hover:text-[#373753] p-1 rounded transition-colors"
+              title="Recarregar ligações"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        <div className="bg-[#f0f4fa] px-6 py-3">
-          <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
-            <div className="w-[280px]">Número</div>
-            <div className="w-[80px]">Nota</div>
-            <div className="w-[160px] text-center">Duração da ligação</div>
-            <div className="w-[200px]">Data</div>
-          </div>
-        </div>
-
-        <div>
-          {formattedCalls.length > 0 ? (
-            formattedCalls.map((call) => (
-              <div 
-                key={call.id} 
-                className="border-b border-[#e1e9f4] px-6 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => handleCallClick(call.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-[280px] flex items-center gap-2">
-                    <span className="text-[#677c92] text-base">{call.number}</span>
-                    {call.hasFailed ? (
-                      <XCircle className="h-4 w-4 text-[#dc2f1c]" />
-                    ) : call.hasAttention ? (
-                      <AlertTriangle className="h-4 w-4 text-[#e67c0b]" />
-                    ) : null}
-                  </div>
-                  <div className="w-[80px]">
-                    {call.hasFailed ? (
-                      <span className="text-[#677c92] text-sm whitespace-nowrap" title="Falha na ligação">
-                        {call.error}
-                      </span>
-                    ) : (
-                      <>
-                        <span className={`text-base font-medium ${call.scoreColor}`}>{call.score}</span>
-                        <span className="text-[#677c92] text-base">/10</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="w-[160px] text-center text-[#677c92] text-base">{call.duration}</div>
-                  <div className="w-[200px] text-[#677c92] text-base">{call.date}</div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="px-6 py-8 text-center">
-              <div className="w-12 h-12 bg-[#f0f4fa] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="h-6 w-6 text-[#677c92]" />
-              </div>
-              <h3 className="text-[#373753] font-medium mb-2">Nenhuma ligação encontrada</h3>
-              <p className="text-[#677c92] text-sm">
-                Este lote ainda não possui ligações registradas ou os dados não puderam ser carregados.
-              </p>
-              <button
-                onClick={handleRetry}
-                className="mt-4 bg-[#3057f2] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2545d9] transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 inline mr-2" />
-                Recarregar
-              </button>
+        {/* Tabela com scroll horizontal */}
+        <div className="overflow-x-auto">
+          <div className="bg-[#f0f4fa] px-4 md:px-6 py-3 min-w-[500px]">
+            <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
+              <div className="w-32 md:w-[280px] flex-shrink-0">Número</div>
+              <div className="hidden md:block w-[80px] flex-shrink-0">Nota</div>
+              <div className="hidden lg:block w-[160px] text-center flex-shrink-0">Duração da ligação</div>
+              <div className="w-24 md:w-[200px] flex-shrink-0">Data</div>
             </div>
-          )}
+          </div>
+
+          <div className="min-w-[500px]">
+            {formattedCalls.length > 0 ? (
+              formattedCalls.map((call) => (
+                <div 
+                  key={call.id} 
+                  className="border-b border-[#e1e9f4] px-4 md:px-6 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleCallClick(call.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-32 md:w-[280px] flex items-center gap-2">
+                      <span className="text-[#677c92] text-sm md:text-base truncate">{call.number}</span>
+                      {call.hasFailed ? (
+                        <XCircle className="h-4 w-4 text-[#dc2f1c] flex-shrink-0" />
+                      ) : call.hasAttention ? (
+                        <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0" />
+                      ) : null}
+                    </div>
+                    <div className="hidden md:block w-[80px]">
+                      {call.hasFailed ? (
+                        <span className="text-[#677c92] text-sm whitespace-nowrap" title="Falha na ligação">
+                          {call.error}
+                        </span>
+                      ) : (
+                        <>
+                          <span className={`text-base font-medium ${call.scoreColor}`}>{call.score}</span>
+                          <span className="text-[#677c92] text-base">/10</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="hidden lg:block w-[160px] text-center text-[#677c92] text-base">{call.duration}</div>
+                    <div className="w-24 md:w-[200px] text-[#677c92] text-sm md:text-base truncate">{call.date}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="px-4 md:px-6 py-8 text-center">
+                <div className="w-12 h-12 bg-[#f0f4fa] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Phone className="h-6 w-6 text-[#677c92]" />
+                </div>
+                <h3 className="text-[#373753] font-medium mb-2">Nenhuma ligação encontrada</h3>
+                <p className="text-[#677c92] text-sm">
+                  Este lote ainda não possui ligações registradas ou os dados não puderam ser carregados.
+                </p>
+                <button
+                  onClick={handleRetry}
+                  className="mt-4 bg-[#3057f2] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2545d9] transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4 inline mr-2" />
+                  Recarregar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

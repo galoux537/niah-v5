@@ -663,9 +663,9 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
       )}
 
       {/* KPI Section */}
-      <div className="flex gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Company Average */}
-        <div className="flex-1 bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
+        <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-[#c9f2cd] rounded-lg flex items-center justify-center">
               <ThumbsUp className="h-5 w-5 text-[#015901]" />
@@ -683,7 +683,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         </div>
 
         {/* Calls in Attention */}
-        <div className="flex-1 bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
+        <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-[#fff6bf] rounded-lg flex items-center justify-center">
               <AlertTriangle className="h-5 w-5 text-[#b86309]" />
@@ -698,7 +698,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         </div>
 
         {/* Performance Distribution */}
-        <div className="flex-1 bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] py-4 px-6">
+        <div className="lg:col-span-1 bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] py-4 px-6">
           <div className="space-y-4">
             <div className="flex justify-between items-start">
               <div>
@@ -741,7 +741,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
       {/* Lists Table */}
       <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]">
         {/* Search and Actions */}
-        <div className="flex items-center justify-between py-4 px-6">
+        <div className="flex items-center justify-between py-4 px-4 md:px-6">
           <div className="flex items-center gap-3 flex-1 max-w-md">
             <Search className="h-4 w-4 text-[#677c92]" />
             <Input
@@ -754,195 +754,124 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
           </div>
         </div>
 
-        {/* Table Header */}
-        <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-6 py-3">
-          <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
-            <div className="w-64">Nome da lista</div>
-            <div className="w-[108px] text-center">Média de notas</div>
-            <div className="w-[280px] text-center">Performance</div>
-            <div className="w-32 text-center">Ligações com falha</div>
-            <div className="w-32 text-center">Total de ligações</div>
-            <div className="w-12"></div>
+        {/* Tabela com scroll horizontal */}
+        <div className="overflow-x-auto">
+          {/* Table Header */}
+          <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-4 md:px-6 py-3 min-w-[800px]">
+            <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
+              <div className="w-32 md:w-64 flex-shrink-0">Nome da lista</div>
+              <div className="w-[108px] text-center flex-shrink-0">Média de notas</div>
+              <div className="w-[280px] text-center flex-shrink-0">Performance</div>
+              <div className="w-32 text-center flex-shrink-0">Ligações com falha</div>
+              <div className="w-32 text-center flex-shrink-0">Total de ligações</div>
+              <div className="w-12 flex-shrink-0"></div>
+            </div>
           </div>
-        </div>
 
-        {/* Table Rows */}
-        <div>
-          {paginatedLists.length > 0 ? (
-            paginatedLists.map((list) => (
-              <div 
-                key={list.id}
-                className="border-b border-[#e1e9f4] px-6 py-2 hover:bg-gray-50 group relative cursor-pointer"
-                onClick={() => onListClick(list.id, list.name)}
-              >
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="w-64 flex items-center gap-3">
-                    <span className="text-[#373753] text-base whitespace-nowrap" title={cleanListName(list.name)}>
-                      {truncateText(cleanListName(list.name), 48)}
-                    </span>
-                    {list.hasAttention && (
-                      <div className="relative group/tooltip pointer-events-auto">
-                        <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0 cursor-help relative z-30" />
-                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.1)] rounded-lg text-sm text-[#373753] whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999]">
-                          Contém ligação com nota inferior a 4.0
+          {/* Table Rows */}
+          <div className="min-w-[800px]">
+            {paginatedLists.length > 0 ? (
+              paginatedLists.map((list) => (
+                <div 
+                  key={list.id}
+                  className="border-b border-[#e1e9f4] px-4 md:px-6 py-2 hover:bg-gray-50 group relative cursor-pointer"
+                  onClick={() => onListClick(list.id, list.name)}
+                >
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="w-32 md:w-64 flex items-center gap-3 flex-shrink-0">
+                      <span className="text-[#373753] text-sm md:text-base whitespace-nowrap truncate" title={cleanListName(list.name)}>
+                        {truncateText(cleanListName(list.name), window.innerWidth < 768 ? 24 : 48)}
+                      </span>
+                      {list.hasAttention && (
+                        <div className="relative group/tooltip pointer-events-auto">
+                          <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0 cursor-help relative z-30" />
+                          <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.1)] rounded-lg text-sm text-[#373753] whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999]">
+                            Contém ligação com nota inferior a 4.0
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-[108px] text-center">
-                    <span className={`${getScoreColor(parseFloat(list.average))} text-base font-medium`}>
-                      {list.average}
-                    </span>
-                    <span className="text-[#677c92] text-base">/10</span>
-                  </div>
-                  <div className="w-[280px] px-1.5 relative z-20 pointer-events-auto">
-                    <StatusBarTooltip
-                      performance={list.performance}
-                      totalCalls={list.totalCalls}
-                    >
-                      <div className="flex h-2 rounded-full overflow-hidden cursor-help">
-                        <div 
-                          className="bg-[#5cb868] rounded-l-full" 
-                          style={{ width: `${list.performance.good}%` }}
-                        ></div>
-                        <div 
-                          className="bg-[#ffbd00]" 
-                          style={{ width: `${list.performance.neutral}%` }}
-                        ></div>
-                        <div 
-                          className="bg-[#dc2f1c] rounded-r-full" 
-                          style={{ width: `${list.performance.bad}%` }}
-                        ></div>
-                      </div>
-                    </StatusBarTooltip>
-                  </div>
-                  <div className="w-32 text-center text-[#677c92] text-base">
-                    {list.failedCalls}
-                  </div>
-                  <div className="w-32 text-center text-[#677c92] text-base">
-                    {list.totalCalls}
-                  </div>
-                  <div className="w-12 flex justify-center relative z-30 pointer-events-auto">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-8 w-8 p-0 text-[#677c92] hover:text-[#373753] opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteDialog(list.id, list.name);
-                          }}
-                          className="cursor-pointer text-[#dc2f1c] hover:text-[#dc2f1c] hover:bg-[#fef2f2]"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      )}
+                    </div>
+                    <div className="w-[108px] text-center flex-shrink-0">
+                      <span className={`${getScoreColor(parseFloat(list.average))} text-base font-medium`}>
+                        {list.average}
+                      </span>
+                      <span className="text-[#677c92] text-base">/10</span>
+                    </div>
+                    <div className="w-[280px] px-1.5 relative z-20 pointer-events-auto flex-shrink-0">
+                      <StatusBarTooltip
+                        performance={list.performance}
+                        totalCalls={list.totalCalls}
+                      >
+                        <div className="flex h-2 rounded-full overflow-hidden cursor-help">
+                          <div 
+                            className="bg-[#5cb868] rounded-l-full" 
+                            style={{ width: `${list.performance.good}%` }}
+                          ></div>
+                          <div 
+                            className="bg-[#ffbd00]" 
+                            style={{ width: `${list.performance.neutral}%` }}
+                          ></div>
+                          <div 
+                            className="bg-[#dc2f1c] rounded-r-full" 
+                            style={{ width: `${list.performance.bad}%` }}
+                          ></div>
+                        </div>
+                      </StatusBarTooltip>
+                    </div>
+                    <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
+                      {list.failedCalls}
+                    </div>
+                    <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
+                      {list.totalCalls}
+                    </div>
+                    <div className="w-12 flex justify-center relative z-30 pointer-events-auto flex-shrink-0">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-8 w-8 p-0 text-[#677c92] hover:text-[#373753] opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog(list.id, list.name);
+                            }}
+                            className="cursor-pointer text-[#dc2f1c] hover:text-[#dc2f1c] hover:bg-[#fef2f2]"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="px-4 md:px-6 py-8 text-center">
+                <div className="text-[#677c92] text-base">
+                  {searchTerm ? (
+                    <>
+                      Nenhuma lista encontrada para "{searchTerm}"
+                      <br />
+                      <span className="text-sm">Tente usar palavras diferentes ou remover filtros</span>
+                    </>
+                  ) : filteredLists.length === 0 ? (
+                    'Nenhuma lista encontrada'
+                  ) : (
+                    'Nenhuma lista nesta página'
+                  )}
+                </div>
               </div>
-            ))
-          ) : (
-            <div className="px-6 py-8 text-center">
-              <div className="text-[#677c92] text-base">
-                {searchTerm ? (
-                  <>
-                    Nenhuma lista encontrada para "{searchTerm}"
-                    <br />
-                    <span className="text-sm">Tente usar palavras diferentes ou remover filtros</span>
-                  </>
-                ) : filteredLists.length === 0 ? (
-                  'Nenhuma lista encontrada'
-                ) : (
-                  'Nenhuma lista nesta página'
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {filteredLists.length > 0 && (
-          <div className="border-t border-[#e1e9f4] px-6 py-4">
-            <div className="flex items-center justify-between">
-              {/* Botão Anterior - Lado Esquerdo */}
-              <div className="flex-shrink-0">
-                {totalPages > 1 ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={goToPreviousPage}
-                    disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                  </Button>
-                ) : (
-                  <div className="w-[88px]"></div>
-                )}
-              </div>
-
-              {/* Páginas Numeradas e Informações - Centro */}
-              <div className="flex items-center gap-4">
-                {/* Números das páginas */}
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1">
-                    {generatePageNumbers().map((page, index) => (
-                      <React.Fragment key={index}>
-                        {page === '...' ? (
-                          <span className="px-2 py-1 text-[#677c92] text-sm">...</span>
-                        ) : (
-                          <Button
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => goToPage(page as number)}
-                            className={`min-w-[32px] h-8 px-2 text-sm ${
-                              currentPage === page
-                                ? 'bg-[#3057f2] text-white hover:bg-[#2545d9] border-[#3057f2]'
-                                : 'border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc]'
-                            }`}
-                          >
-                            {page}
-                          </Button>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
-
-                {/* Informações da página removidas conforme solicitação */}
-              </div>
-
-              {/* Botão Próximo - Lado Direito */}
-              <div className="flex-shrink-0">
-                {totalPages > 1 ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={goToNextPage}
-                    disabled={currentPage === totalPages}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Próximo
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <div className="w-[88px]"></div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -957,7 +886,6 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
               <p>
                 Tem certeza que deseja excluir <strong>PERMANENTEMENTE</strong> a lista <strong>"{listToDelete?.name}"</strong>?
               </p>
-              
               <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-3">
                 <p className="text-[#dc2f1c] text-sm">
                   <strong>⚠️ ATENÇÃO:</strong> Esta ação irá excluir:
@@ -968,7 +896,6 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                   <li>• <strong>TODAS as chamadas</strong> desses critérios</li>
                 </ul>
               </div>
-              
               <p className="text-sm text-[#dc2f1c]">
                 <strong>Esta ação não pode ser desfeita.</strong> Todos os dados relacionados serão permanentemente removidos.
               </p>

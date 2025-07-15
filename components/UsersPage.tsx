@@ -134,39 +134,41 @@ export default function UsersPage() {
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-    return (
-    <div className="w-full min-h-[calc(100vh-80px)] bg-[#f9fafc] px-6 pb-6 space-y-6">
-      <div className="space-y-6">
+  return (
+    <div className="w-full min-h-[calc(100vh-80px)] bg-[#f9fafc] px-4 md:px-6 pb-6 space-y-6">
+      <div className="w-full max-w-none space-y-6">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-[#373753] mb-1">Usuários da Empresa</h1>
           <p className="text-[#677c92] text-sm">Gerencie os acessos dos usuários da empresa <span className="font-medium">{company?.name}</span></p>
         </div>
+        
         {/* Card de CRIAÇÃO de usuário */}
-        <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-[10.5px] w-full">
-          <form onSubmit={handleCreate} className="flex flex-col md:flex-row gap-4 items-end mb-0 w-full">
-            <div className="flex-1 min-w-[180px]">
+        <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] p-4 md:p-6 w-full">
+          <form onSubmit={handleCreate} className="flex flex-col lg:flex-row gap-4 items-end mb-0 w-full">
+            <div className="flex-1 min-w-[200px] w-full">
               <label className="block text-sm font-medium text-[#373753] mb-1">Nome</label>
               <Input name="name" value={form.name} onChange={handleInput} placeholder="Digite o nome completo" required />
-      </div>
-            <div className="flex-1 min-w-[180px]">
+            </div>
+            <div className="flex-1 min-w-[200px] w-full">
               <label className="block text-sm font-medium text-[#373753] mb-1">E-mail</label>
               <Input name="email" value={form.email} onChange={handleInput} placeholder="email@empresa.com" required type="email" />
             </div>
-            <div className="flex-1 min-w-[180px]">
+            <div className="flex-1 min-w-[200px] w-full">
               <label className="block text-sm font-medium text-[#373753] mb-1">Senha</label>
               <Input name="password" value={form.password} onChange={handleInput} placeholder="Digite uma senha" required type="password" />
             </div>
-            <Button type="submit" disabled={creating} className="h-10 px-6 mt-6 md:mt-0 bg-[#3057f2] hover:bg-[#2545d9] text-white">Adicionar</Button>
+            <Button type="submit" disabled={creating} className="h-10 px-6 mt-6 lg:mt-0 bg-[#3057f2] hover:bg-[#2545d9] text-white w-full lg:w-auto">
+              Adicionar
+            </Button>
           </form>
-          {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
-          {success && <div className="text-green-600 mb-4 text-sm font-medium">{success}</div>}
-
+          {error && <div className="text-red-500 mt-4 text-sm">{error}</div>}
+          {success && <div className="text-green-600 mt-4 text-sm font-medium">{success}</div>}
         </div>
 
         {/* Card de LISTAGEM de usuários */}
         <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]">
           {/* Search bar */}
-          <div className="flex items-center justify-between py-3 pl-6 pr-3 border-b border-[#e1e9f4]">
+          <div className="flex items-center justify-between py-3 px-4 md:px-6 border-b border-[#e1e9f4]">
             <div className="flex items-center gap-3 flex-1 max-w-md">
               <Search className="h-4 w-4 text-[#677c92]" />
               <Input
@@ -179,52 +181,60 @@ export default function UsersPage() {
             </div>
           </div>
 
-          {/* Header */}
-          <div className="bg-[#f0f4fa] px-6 py-3">
-            <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
-              <div className="w-48">Nome</div>
-              <div className="flex-1">E-mail</div>
-              <div className="w-32">Tipo</div>
-              <div className="w-12"></div>
+          {/* Tabela com scroll horizontal */}
+          <div className="overflow-x-auto">
+            {/* Header da tabela */}
+            <div className="bg-[#f0f4fa] px-4 md:px-6 py-3 min-w-[600px]">
+              <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
+                <div className="w-48 flex-shrink-0">Nome</div>
+                <div className="flex-1 min-w-[200px]">E-mail</div>
+                <div className="w-32 flex-shrink-0">Tipo</div>
+                <div className="w-12 flex-shrink-0"></div>
+              </div>
             </div>
-          </div>
 
-          {/* Rows */}
-          <div>
-                {loading ? (
-              <div className="px-6 py-8 text-center text-[#677c92]">Carregando usuários...</div>
-            ) : displayedUsers.length === 0 ? (
-              <div className="px-6 py-8 text-center text-[#677c92]">Nenhum usuário encontrado.</div>
-            ) : (
-              displayedUsers.map(user => (
-                <div key={user.id} className="border-b border-[#e1e9f4] px-6 py-2 hover:bg-gray-50 group relative">
-                  <div className="flex items-center justify-between relative z-10">
-                    <div className="w-48 text-[#373753] font-medium">{user.name}</div>
-                    <div className="flex-1 text-[#677c92]">{user.email}</div>
-                    <div className="w-32">
-                      {user.role === 'master_admin' ? (
-                        <span className="inline-block px-3 py-1 rounded-full bg-[#3057f2] text-white text-xs font-semibold">Master Admin</span>
-                      ) : (
-                        <span className="inline-block px-3 py-1 rounded-full bg-[#e1e9f4] text-[#677c92] text-xs">Gestor</span>
-                      )}
-                    </div>
-                    <div className="w-12 text-right">
-                      <button
-                        onClick={() => openDeleteModal(user)}
-                        title="Excluir usuário"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
-                        style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-                      >
-                        <Trash2 className="w-5 h-5 text-red-600" />
-                      </button>
+            {/* Linhas da tabela */}
+            <div className="min-w-[600px]">
+              {loading ? (
+                <div className="px-4 md:px-6 py-8 text-center text-[#677c92]">Carregando usuários...</div>
+              ) : displayedUsers.length === 0 ? (
+                <div className="px-4 md:px-6 py-8 text-center text-[#677c92]">Nenhum usuário encontrado.</div>
+              ) : (
+                displayedUsers.map(user => (
+                  <div key={user.id} className="border-b border-[#e1e9f4] px-4 md:px-6 py-2 hover:bg-gray-50 group relative">
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="w-48 flex-shrink-0 text-[#373753] font-medium truncate" title={user.name}>
+                        {user.name}
+                      </div>
+                      <div className="flex-1 min-w-[200px] text-[#677c92] truncate" title={user.email}>
+                        {user.email}
+                      </div>
+                      <div className="w-32 flex-shrink-0">
+                        {user.role === 'master_admin' ? (
+                          <span className="inline-block px-3 py-1 rounded-full bg-[#3057f2] text-white text-xs font-semibold">Master Admin</span>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-full bg-[#e1e9f4] text-[#677c92] text-xs">Gestor</span>
+                        )}
+                      </div>
+                      <div className="w-12 flex-shrink-0 text-right">
+                        <button
+                          onClick={() => openDeleteModal(user)}
+                          title="Excluir usuário"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
+                          style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                        >
+                          <Trash2 className="w-5 h-5 text-red-600" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
-          </div>
+      </div>
+
       {/* Modal de confirmação de exclusão */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>
@@ -237,11 +247,11 @@ export default function UsersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-                          Cancelar
-                        </Button>
+              Cancelar
+            </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
               Excluir
-                        </Button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
