@@ -245,12 +245,13 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       });
     }
     
-    // Coletar URLs de áudio indexadas
+    // Coletar URLs de áudio indexadas (suporta tanto audioUrls_ quanto audioUris_)
     Object.keys(req.body).forEach(key => {
-      const urlMatch = key.match(/^audioUrls_(\d+)$/);
+      const urlMatch = key.match(/^audioUris?_(\d+)$/);
       if (urlMatch) {
         const index = parseInt(urlMatch[1]);
         indexedUrls[index] = req.body[key];
+        console.log(`🔗 URL ${index} encontrada: ${req.body[key]}`);
       }
     });
     
@@ -274,34 +275,76 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       try {
         console.log(`🌐 Baixando áudio da URL: ${url}`);
         
+        // Validar URL antes de fazer a requisição
+        let urlObj;
+        try {
+          urlObj = new URL(url);
+        } catch (urlError) {
+          throw new Error(`URL inválida: ${urlError.message}`);
+        }
+        
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; NIAH-Audio-Downloader/1.0)'
+            'User-Agent': 'Mozilla/5.0 (compatible; NIAH-Audio-Downloader/1.0)',
+            'Accept': 'audio/*, */*',
+            'Accept-Encoding': 'gzip, deflate, br'
           },
           timeout: 30000 // 30 segundos timeout
         });
         
+        console.log(`📡 Resposta da URL: ${response.status} ${response.statusText}`);
+        console.log(`📋 Headers da resposta:`, Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // Tentar obter mais detalhes sobre o erro
+          let errorDetails = '';
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorDetails = ` - Detalhes: ${errorText.substring(0, 200)}`;
+            }
+          } catch (e) {
+            // Ignora erro ao ler resposta de erro
+          }
+          
+          throw new Error(`HTTP ${response.status}: ${response.statusText}${errorDetails}`);
         }
         
         const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.startsWith('audio/')) {
-          throw new Error(`URL não retorna um arquivo de áudio válido. Content-Type: ${contentType}`);
+        console.log(`🎵 Content-Type recebido: ${contentType}`);
+        
+        // Aceitar mais tipos de conteúdo além de audio/*
+        const acceptedTypes = [
+          'audio/', 'video/', 'application/octet-stream', 
+          'application/ogg', 'application/mp4', 'application/mpeg'
+        ];
+        
+        const isAcceptedType = acceptedTypes.some(type => 
+          contentType && contentType.toLowerCase().includes(type)
+        );
+        
+        if (!contentType || !isAcceptedType) {
+          console.warn(`⚠️ Content-Type suspeito: ${contentType}. Tentando processar mesmo assim...`);
         }
         
         const buffer = await response.arrayBuffer();
         const audioBuffer = Buffer.from(buffer);
         
+        console.log(`📦 Tamanho do arquivo baixado: ${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB`);
+        
+        // Verificar se o arquivo não está vazio
+        if (audioBuffer.length === 0) {
+          throw new Error('Arquivo baixado está vazio (0 bytes)');
+        }
+        
         // Extrair nome do arquivo da URL
-        const urlObj = new URL(url);
         const pathname = urlObj.pathname;
         let filename = pathname.split('/').pop();
         
         // Se não conseguir extrair nome, usar padrão
         if (!filename || filename === '' || !filename.includes('.')) {
-          const extension = contentType.split('/')[1] || 'mp3';
+          const extension = contentType ? contentType.split('/')[1] || 'mp3' : 'mp3';
           filename = `audio_from_url_${index}.${extension}`;
         }
         
@@ -310,7 +353,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           fieldname: `audioFiles_${index}`,
           originalname: filename,
           encoding: '7bit',
-          mimetype: contentType,
+          mimetype: contentType || 'audio/mpeg',
           buffer: audioBuffer,
           size: audioBuffer.length
         };
@@ -382,11 +425,26 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     }
     
     // ➡️ Validações obrigatórias específicas (apenas índice 0)
-    if (!organizedData[0] || !organizedData[0].file) {
+    const hasAudioFile0 = indexedFiles[0] !== undefined;
+    const hasAudioUrl0 = indexedUrls[0] !== undefined;
+    
+    console.log(`📋 Validação de campos obrigatórios para índice 0:`);
+    console.log(`  - audioFiles_0 presente: ${hasAudioFile0}`);
+    console.log(`  - audioUrls_0 presente: ${hasAudioUrl0}`);
+    
+    // Regra: audioFiles_0 tem prioridade, se não existir, audioUrls_0 é obrigatório
+    if (!hasAudioFile0 && !hasAudioUrl0) {
       return res.status(400).json({
-        error: 'MISSING_AUDIO_FILE_0',
-        message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição'
+        error: 'MISSING_AUDIO_SOURCE_0',
+        message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.'
       });
+    }
+    
+    // Se ambos existem, usar o arquivo (prioridade)
+    if (hasAudioFile0 && hasAudioUrl0) {
+      console.log(`⚠️ Tanto audioFiles_0 quanto audioUrls_0 foram fornecidos. Usando audioFiles_0 (prioridade).`);
+      // Remover a URL para evitar download desnecessário
+      delete indexedUrls[0];
     }
 
     if (!organizedData[0].phoneNumber) {

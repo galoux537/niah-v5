@@ -370,6 +370,26 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
       return;
     }
 
+    // Validação de campos obrigatórios para o primeiro arquivo (índice 0)
+    const firstFile = files[0];
+    const hasAudioFile = firstFile.file !== null;
+    const hasAudioUrl = firstFile.audioUrl !== null && firstFile.audioUrl.trim() !== '';
+    
+    console.log(`📋 Validação de campos obrigatórios para índice 0:`);
+    console.log(`  - audioFiles_0 presente: ${hasAudioFile}`);
+    console.log(`  - audioUrls_0 presente: ${hasAudioUrl}`);
+    
+    // Regra: audioFiles_0 tem prioridade, se não existir, audioUrls_0 é obrigatório
+    if (!hasAudioFile && !hasAudioUrl) {
+      alert('❌ Campo obrigatório: audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.');
+      return;
+    }
+    
+    // Se ambos existem, usar o arquivo (prioridade)
+    if (hasAudioFile && hasAudioUrl) {
+      console.log(`⚠️ Tanto audioFiles_0 quanto audioUrls_0 foram fornecidos. Usando audioFiles_0 (prioridade).`);
+    }
+
     if (!selectedCriteriaId) {
       alert('Selecione um critério de avaliação');
       return;

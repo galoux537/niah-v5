@@ -397,6 +397,15 @@ echo $response;`
   };
 
   const handleSubmit = async () => {
+    // Validação de campos obrigatórios
+    const hasAudioFile0 = formData.audioFiles_0 !== null;
+    const hasAudioUrl0 = formData.audioUrls_0 && formData.audioUrls_0.trim() !== '';
+    
+    if (!hasAudioFile0 && !hasAudioUrl0) {
+      alert('❌ Campo obrigatório: audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -405,6 +414,7 @@ echo $response;`
       formDataToSend.append('criteria', formData.criteria);
       formDataToSend.append('webhook', formData.webhook);
       
+      // Prioridade para arquivo, se não existir, usar URL
       if (formData.audioFiles_0) {
         formDataToSend.append('audioFiles_0', formData.audioFiles_0);
       } else if (formData.audioUrls_0) {
@@ -413,6 +423,7 @@ echo $response;`
       formDataToSend.append('phone_number_0', formData.phone_number_0);
       formDataToSend.append('metadata_0', formData.metadata_0);
       
+      // Para o segundo arquivo (opcional)
       if (formData.audioFiles_1) {
         formDataToSend.append('audioFiles_1', formData.audioFiles_1);
         formDataToSend.append('phone_number_1', formData.phone_number_1);
@@ -661,6 +672,9 @@ echo $response;`
                         placeholder="https://exemplo.com/audio.mp3"
                         className="flex-1 h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px]"
                       />
+                      <div className="text-xs text-blue-600">
+                        Obrigatório se audioFiles_0 não for fornecido
+                      </div>
                     </div>
                     
                     {/* phone_number_0 */}
@@ -762,6 +776,9 @@ echo $response;`
                         placeholder="https://exemplo.com/audio.mp3"
                         className="flex-1 h-10 px-3 bg-white border border-[#E1E9F4] rounded-[10px]"
                       />
+                      <div className="text-xs text-blue-600">
+                        Obrigatório se audioFiles_1 não for fornecido
+                      </div>
                     </div>
                     
                     {/* phone_number_1 */}
