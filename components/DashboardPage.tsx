@@ -144,7 +144,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
       const listIds = lists.map(list => list.id);
       const { data: callsData, error: callsError } = await supabase
         .from('calls')
-        .select('id, evaluation_list_id, overall_score')
+        .select('id, evaluation_list_id, overall_score, status')
         .in('evaluation_list_id', listIds)
         .eq('company_id', companyId);
 
@@ -160,29 +160,31 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         // Buscar chamadas específicas desta lista (geralmente só sucessos)
         const listCalls = calls.filter(call => call.evaluation_list_id === list.id);
 
-        // Falhas são ligações onde overall_score é nulo OU status=failed (registradas em outra tabela)
-        const failedCalls = listCalls.filter(call => call.overall_score === null).length;
+        // Falhas são ligações com status='failed' (áudio mudo, áudio grande, áudio vazio, etc.)
+        const failedCalls = listCalls.filter(call => call.status === 'failed').length;
 
-        // Sucessos registrados no campo total_calls da evaluation_list (ou quantidade de listCalls com score válido)
-        const successfulCalls = list.total_calls || listCalls.filter(call => call.overall_score !== null).length;
-
-        const totalCalls = successfulCalls + failedCalls;
+        // Total real de ligações (incluindo falhas)
+        const totalCalls = listCalls.length;
         
-        // Calcular média real das chamadas (igual à tela interna)
+        // Calcular média real das chamadas (igual à tela interna) - excluindo falhas
         let avgScore = 0;
-        if (listCalls.length > 0) {
-          const totalScore = listCalls.reduce((sum, call) => sum + (call.overall_score || 0), 0);
-          avgScore = totalScore / listCalls.length;
+        const callsWithoutFailures = listCalls.filter(call => call.status !== 'failed');
+        if (callsWithoutFailures.length > 0) {
+          const totalScore = callsWithoutFailures.reduce((sum: number, call: any) => sum + (call.overall_score || 0), 0);
+          avgScore = totalScore / callsWithoutFailures.length;
         } else {
-          // Se não há chamadas, usar o valor da tabela como fallback
+          // Se não há chamadas bem-sucedidas, usar o valor da tabela como fallback
           avgScore = list.average_score || 0;
         }
         
-        // Calcular performance real baseada nos scores das chamadas
+        // Calcular performance real baseada nos scores das chamadas (excluindo falhas)
         let good = 0, neutral = 0, bad = 0;
         
         if (listCalls.length > 0) {
           listCalls.forEach(call => {
+            // Pular ligações com falha no cálculo de performance
+            if (call.status === 'failed') return;
+            
             const score = call.overall_score || 0;
             if (score >= 7) {
               good++;
@@ -193,11 +195,17 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
             }
           });
           
-          // Converter para porcentagens
-          const total = listCalls.length;
-          good = Math.round((good / total) * 100);
-          neutral = Math.round((neutral / total) * 100);
-          bad = 100 - good - neutral; // Garantir que soma seja 100%
+          // Converter para porcentagens (apenas ligações sem falha)
+          const totalWithoutFailures = callsWithoutFailures.length;
+          if (totalWithoutFailures > 0) {
+            good = Math.round((good / totalWithoutFailures) * 100);
+            neutral = Math.round((neutral / totalWithoutFailures) * 100);
+            bad = 100 - good - neutral; // Garantir que soma seja 100%
+          } else {
+            good = 0;
+            neutral = 0;
+            bad = 0;
+          }
         } else {
           // Se não há chamadas, usar valores baseados na média da lista
           if (avgScore >= 7) {
@@ -215,11 +223,14 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
           }
         }
 
+        // Verificar se há ligações em atenção (nota < 4) entre as ligações bem-sucedidas
+        const hasAttention = callsWithoutFailures.some(call => (call.overall_score || 0) < 4);
+
         return {
           id: list.id,
           name: list.name,
           average: avgScore.toFixed(1),
-          hasAttention: avgScore < 4,
+          hasAttention: hasAttention,
           totalCalls: totalCalls,
           failedCalls: failedCalls,
           performance: { good, neutral, bad }
@@ -233,17 +244,23 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         ? (avgScores.reduce((sum, list) => sum + parseFloat(list.average), 0) / avgScores.length).toFixed(1)
         : '0.0';
       
-      // Calcular ligações em atenção (notas entre 4.0 e 6.9)
+      // Calcular ligações em atenção (notas menores que 4.0) - excluindo falhas
       const callsInAttention = calls.filter(call => {
+        // Pular ligações com falha
+        if (call.status === 'failed') return false;
+        
         const score = call.overall_score || 0;
-        return score >= 4 && score < 7;
+        return score < 4;
       }).length;
 
-      // Calcular performance geral baseada em dados reais
+      // Calcular performance geral baseada em dados reais (excluindo falhas)
       let globalGood = 0, globalNeutral = 0, globalBad = 0;
       
       if (calls.length > 0) {
         calls.forEach(call => {
+          // Pular ligações com falha no cálculo de performance
+          if (call.status === 'failed') return;
+          
           const score = call.overall_score || 0;
           if (score >= 7) {
             globalGood++;
@@ -254,11 +271,17 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
           }
         });
         
-        // Converter para porcentagens
-        const totalCallsWithScores = calls.length;
-        globalGood = Math.round((globalGood / totalCallsWithScores) * 100);
-        globalNeutral = Math.round((globalNeutral / totalCallsWithScores) * 100);
-        globalBad = 100 - globalGood - globalNeutral; // Garantir que soma seja 100%
+        // Converter para porcentagens (apenas ligações sem falha)
+        const totalCallsWithScores = calls.filter(call => call.status !== 'failed').length;
+        if (totalCallsWithScores > 0) {
+          globalGood = Math.round((globalGood / totalCallsWithScores) * 100);
+          globalNeutral = Math.round((globalNeutral / totalCallsWithScores) * 100);
+          globalBad = 100 - globalGood - globalNeutral; // Garantir que soma seja 100%
+        } else {
+          globalGood = 0;
+          globalNeutral = 0;
+          globalBad = 0;
+        }
       } else {
         // Fallback se não há dados
         globalGood = 0;

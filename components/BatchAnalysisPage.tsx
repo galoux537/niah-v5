@@ -453,7 +453,7 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
       files.forEach((batchFile, index) => {
         // Arquivo de áudio ou URL
         if (batchFile.file) {
-          formData.append(`audioFiles_${index}`, batchFile.file);
+        formData.append(`audioFiles_${index}`, batchFile.file);
         } else if (batchFile.audioUrl) {
           formData.append(`audioUrls_${index}`, batchFile.audioUrl);
         }
@@ -660,27 +660,27 @@ export function BatchAnalysisPage({ compact = false }: BatchAnalysisPageProps) {
 
               <div className="space-y-4">
                 {/* Upload de Arquivos */}
-                <div 
-                  className="border-2 border-dashed border-[#e1e9f4] rounded-lg p-8 text-center hover:border-[#3057f2] transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <FileAudio className="w-12 h-12 text-[#677c92] mx-auto mb-4" />
-                  <p className="text-[#373753] font-medium mb-2">
-                    Clique para selecionar arquivos de áudio
-                  </p>
-                  <p className="text-[#677c92] text-sm">
-                    Formatos suportados: MP3, WAV | Máx: 25MB por arquivo | Sem limite de quantidade
-                  </p>
-                </div>
+              <div 
+                className="border-2 border-dashed border-[#e1e9f4] rounded-lg p-8 text-center hover:border-[#3057f2] transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileAudio className="w-12 h-12 text-[#677c92] mx-auto mb-4" />
+                <p className="text-[#373753] font-medium mb-2">
+                  Clique para selecionar arquivos de áudio
+                </p>
+                <p className="text-[#677c92] text-sm">
+                  Formatos suportados: MP3, WAV | Máx: 25MB por arquivo | Sem limite de quantidade
+                </p>
+              </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="audio/*,.mp3,.wav"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="audio/*,.mp3,.wav"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
 
                 {/* Separador */}
                 <div className="flex items-center">

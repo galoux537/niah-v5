@@ -578,7 +578,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           console.log(`  - ${key}: ${req.body[key]}`);
         }
       });
-      return res.status(400).json({
+      return res.status(400).json({ 
         error: 'MISSING_AUDIO_SOURCE_0',
         message: 'audioFiles_0 ou audioUrls_0 é obrigatório na requisição. Prioridade para audioFiles_0, se não fornecido, audioUrls_0 é obrigatório.'
       });

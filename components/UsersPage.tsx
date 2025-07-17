@@ -134,7 +134,7 @@ export default function UsersPage() {
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
+    return (
     <div className="w-full min-h-[calc(100vh-80px)] bg-[#f9fafc] px-4 md:px-6 pb-6 space-y-6">
       <div className="w-full max-w-none space-y-6">
         <div className="mb-6">
@@ -148,7 +148,7 @@ export default function UsersPage() {
             <div className="flex-1 min-w-[200px] w-full">
               <label className="block text-sm font-medium text-[#373753] mb-1">Nome</label>
               <Input name="name" value={form.name} onChange={handleInput} placeholder="Digite o nome completo" required />
-            </div>
+      </div>
             <div className="flex-1 min-w-[200px] w-full">
               <label className="block text-sm font-medium text-[#373753] mb-1">E-mail</label>
               <Input name="email" value={form.email} onChange={handleInput} placeholder="email@empresa.com" required type="email" />
@@ -185,24 +185,24 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             {/* Header da tabela */}
             <div className="bg-[#f0f4fa] px-4 md:px-6 py-3 min-w-[600px]">
-              <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
+            <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
                 <div className="w-48 flex-shrink-0">Nome</div>
                 <div className="flex-1 min-w-[200px]">E-mail</div>
                 <div className="w-32 flex-shrink-0">Tipo</div>
                 <div className="w-12 flex-shrink-0"></div>
-              </div>
             </div>
+          </div>
 
             {/* Linhas da tabela */}
             <div className="min-w-[600px]">
-              {loading ? (
+                {loading ? (
                 <div className="px-4 md:px-6 py-8 text-center text-[#677c92]">Carregando usuários...</div>
-              ) : displayedUsers.length === 0 ? (
+            ) : displayedUsers.length === 0 ? (
                 <div className="px-4 md:px-6 py-8 text-center text-[#677c92]">Nenhum usuário encontrado.</div>
-              ) : (
-                displayedUsers.map(user => (
+            ) : (
+              displayedUsers.map(user => (
                   <div key={user.id} className="border-b border-[#e1e9f4] px-4 md:px-6 py-2 hover:bg-gray-50 group relative">
-                    <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center justify-between relative z-10">
                       <div className="w-48 flex-shrink-0 text-[#373753] font-medium truncate" title={user.name}>
                         {user.name}
                       </div>
@@ -210,29 +210,29 @@ export default function UsersPage() {
                         {user.email}
                       </div>
                       <div className="w-32 flex-shrink-0">
-                        {user.role === 'master_admin' ? (
-                          <span className="inline-block px-3 py-1 rounded-full bg-[#3057f2] text-white text-xs font-semibold">Master Admin</span>
-                        ) : (
-                          <span className="inline-block px-3 py-1 rounded-full bg-[#e1e9f4] text-[#677c92] text-xs">Gestor</span>
-                        )}
-                      </div>
+                      {user.role === 'master_admin' ? (
+                        <span className="inline-block px-3 py-1 rounded-full bg-[#3057f2] text-white text-xs font-semibold">Master Admin</span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 rounded-full bg-[#e1e9f4] text-[#677c92] text-xs">Gestor</span>
+                      )}
+                    </div>
                       <div className="w-12 flex-shrink-0 text-right">
-                        <button
-                          onClick={() => openDeleteModal(user)}
-                          title="Excluir usuário"
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
-                          style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-                        >
-                          <Trash2 className="w-5 h-5 text-red-600" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => openDeleteModal(user)}
+                        title="Excluir usuário"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
+                        style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                      >
+                        <Trash2 className="w-5 h-5 text-red-600" />
+                      </button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
+          </div>
       </div>
 
       {/* Modal de confirmação de exclusão */}
@@ -247,11 +247,11 @@ export default function UsersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-              Cancelar
-            </Button>
+                          Cancelar
+                        </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
               Excluir
-            </Button>
+                        </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
