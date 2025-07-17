@@ -758,122 +758,199 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
 
         {/* Tabela com scroll horizontal */}
         <div className="overflow-x-auto">
-          {/* Table Header */}
+        {/* Table Header */}
           <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-4 md:px-6 py-3 min-w-[800px]">
-            <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
+          <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
               <div className="w-32 md:w-64 flex-shrink-0">Nome da lista</div>
               <div className="w-[108px] text-center flex-shrink-0">Média de notas</div>
               <div className="w-[280px] text-center flex-shrink-0">Performance</div>
               <div className="w-32 text-center flex-shrink-0">Ligações com falha</div>
               <div className="w-32 text-center flex-shrink-0">Total de ligações</div>
               <div className="w-12 flex-shrink-0"></div>
-            </div>
           </div>
+        </div>
 
-          {/* Table Rows */}
+        {/* Table Rows */}
           <div className="min-w-[800px]">
-            {paginatedLists.length > 0 ? (
-              paginatedLists.map((list) => (
-                <div 
-                  key={list.id}
+          {paginatedLists.length > 0 ? (
+            paginatedLists.map((list) => (
+              <div 
+                key={list.id}
                   className="border-b border-[#e1e9f4] px-4 md:px-6 py-2 hover:bg-gray-50 group relative cursor-pointer"
-                  onClick={() => onListClick(list.id, list.name)}
-                >
-                  <div className="flex items-center justify-between relative z-10">
+                onClick={() => onListClick(list.id, list.name)}
+              >
+                <div className="flex items-center justify-between relative z-10">
                     <div className="w-32 md:w-64 flex items-center gap-3 flex-shrink-0">
                       <span className="text-[#373753] text-sm md:text-base whitespace-nowrap truncate" title={cleanListName(list.name)}>
                         {truncateText(cleanListName(list.name), window.innerWidth < 768 ? 24 : 48)}
-                      </span>
-                      {list.hasAttention && (
-                        <div className="relative group/tooltip pointer-events-auto">
-                          <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0 cursor-help relative z-30" />
-                          <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.1)] rounded-lg text-sm text-[#373753] whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999]">
-                            Contém ligação com nota inferior a 4.0
-                          </div>
+                    </span>
+                    {list.hasAttention && (
+                      <div className="relative group/tooltip pointer-events-auto">
+                        <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0 cursor-help relative z-30" />
+                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.1)] rounded-lg text-sm text-[#373753] whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999]">
+                          Contém ligação com nota inferior a 4.0
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                  </div>
                     <div className="w-[108px] text-center flex-shrink-0">
-                      <span className={`${getScoreColor(parseFloat(list.average))} text-base font-medium`}>
-                        {list.average}
-                      </span>
-                      <span className="text-[#677c92] text-base">/10</span>
-                    </div>
+                    <span className={`${getScoreColor(parseFloat(list.average))} text-base font-medium`}>
+                      {list.average}
+                    </span>
+                    <span className="text-[#677c92] text-base">/10</span>
+                  </div>
                     <div className="w-[280px] px-1.5 relative z-20 pointer-events-auto flex-shrink-0">
-                      <StatusBarTooltip
-                        performance={list.performance}
-                        totalCalls={list.totalCalls}
-                      >
-                        <div className="flex h-2 rounded-full overflow-hidden cursor-help">
-                          <div 
-                            className="bg-[#5cb868] rounded-l-full" 
-                            style={{ width: `${list.performance.good}%` }}
-                          ></div>
-                          <div 
-                            className="bg-[#ffbd00]" 
-                            style={{ width: `${list.performance.neutral}%` }}
-                          ></div>
-                          <div 
-                            className="bg-[#dc2f1c] rounded-r-full" 
-                            style={{ width: `${list.performance.bad}%` }}
-                          ></div>
-                        </div>
-                      </StatusBarTooltip>
-                    </div>
+                    <StatusBarTooltip
+                      performance={list.performance}
+                      totalCalls={list.totalCalls}
+                    >
+                      <div className="flex h-2 rounded-full overflow-hidden cursor-help">
+                        <div 
+                          className="bg-[#5cb868] rounded-l-full" 
+                          style={{ width: `${list.performance.good}%` }}
+                        ></div>
+                        <div 
+                          className="bg-[#ffbd00]" 
+                          style={{ width: `${list.performance.neutral}%` }}
+                        ></div>
+                        <div 
+                          className="bg-[#dc2f1c] rounded-r-full" 
+                          style={{ width: `${list.performance.bad}%` }}
+                        ></div>
+                      </div>
+                    </StatusBarTooltip>
+                  </div>
                     <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
-                      {list.failedCalls}
-                    </div>
+                    {list.failedCalls}
+                  </div>
                     <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
-                      {list.totalCalls}
-                    </div>
+                    {list.totalCalls}
+                  </div>
                     <div className="w-12 flex justify-center relative z-30 pointer-events-auto flex-shrink-0">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-8 w-8 p-0 text-[#677c92] hover:text-[#373753] opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDeleteDialog(list.id, list.name);
-                            }}
-                            className="cursor-pointer text-[#dc2f1c] hover:text-[#dc2f1c] hover:bg-[#fef2f2]"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-8 w-8 p-0 text-[#677c92] hover:text-[#373753] opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteDialog(list.id, list.name);
+                          }}
+                          className="cursor-pointer text-[#dc2f1c] hover:text-[#dc2f1c] hover:bg-[#fef2f2]"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-              ))
-            ) : (
+              </div>
+            ))
+          ) : (
               <div className="px-4 md:px-6 py-8 text-center">
-                <div className="text-[#677c92] text-base">
-                  {searchTerm ? (
-                    <>
-                      Nenhuma lista encontrada para "{searchTerm}"
-                      <br />
-                      <span className="text-sm">Tente usar palavras diferentes ou remover filtros</span>
-                    </>
-                  ) : filteredLists.length === 0 ? (
-                    'Nenhuma lista encontrada'
-                  ) : (
-                    'Nenhuma lista nesta página'
-                  )}
+              <div className="text-[#677c92] text-base">
+                {searchTerm ? (
+                  <>
+                    Nenhuma lista encontrada para "{searchTerm}"
+                    <br />
+                    <span className="text-sm">Tente usar palavras diferentes ou remover filtros</span>
+                  </>
+                ) : filteredLists.length === 0 ? (
+                  'Nenhuma lista encontrada'
+                ) : (
+                  'Nenhuma lista nesta página'
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+              </div>
+
+        {/* Pagination */}
+        {filteredLists.length > 0 && (
+          <div className="border-t border-[#e1e9f4] px-6 py-4">
+            <div className="flex items-center justify-between">
+              {/* Botão Anterior - Lado Esquerdo */}
+              <div className="flex-shrink-0">
+                {totalPages > 1 ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                  </Button>
+                ) : (
+                  <div className="w-[88px]"></div>
+                )}
+              </div>
+
+              {/* Páginas Numeradas e Informações - Centro */}
+              <div className="flex items-center gap-4">
+                {/* Números das páginas */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    {generatePageNumbers().map((page, index) => (
+                      <React.Fragment key={index}>
+                        {page === '...' ? (
+                          <span className="px-2 py-1 text-[#677c92] text-sm">...</span>
+                        ) : (
+                          <Button
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => goToPage(page as number)}
+                            className={`min-w-[32px] h-8 px-2 text-sm ${
+                              currentPage === page
+                                ? 'bg-[#3057f2] text-white hover:bg-[#2545d9] border-[#3057f2]'
+                                : 'border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc]'
+                            }`}
+                          >
+                            {page}
+                          </Button>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
+
+                {/* Informações da página */}
+                <div className="text-[#677c92] text-sm whitespace-nowrap">
+                  {Math.min(endIndex, filteredLists.length)} de {filteredLists.length} {filteredLists.length === 1 ? 'lista' : 'listas'}
                 </div>
               </div>
-            )}
+
+              {/* Botão Próximo - Lado Direito */}
+              <div className="flex-shrink-0">
+                {totalPages > 1 ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Próximo
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <div className="w-[88px]"></div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}
