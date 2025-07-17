@@ -190,7 +190,7 @@ function AppContent() {
             <ListDetailPageV3 
               listId={selectedListId} 
               listName={selectedListName}
-              onBack={goBack} 
+              onBack={handleBackToDashboard} 
             />
           );
         
