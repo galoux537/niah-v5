@@ -779,22 +779,31 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
           </div>
         </div>
 
-        {/* Tabela com scroll horizontal */}
-        <div className="relative">
+        {/* Tabela responsiva */}
+        <div className="relative overflow-x-auto">
         {/* Table Header */}
-          <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-4 md:px-6 py-3 min-w-[800px] relative z-50">
+          <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-4 md:px-6 py-3 min-w-[800px] md:min-w-0 relative z-10">
           <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
               <div className="w-32 md:w-64 flex-shrink-0">Nome da lista</div>
-              <div className="w-[108px] text-center flex-shrink-0">Média de notas</div>
+              <div className="w-[108px] text-center flex-shrink-0">
+                <span className="hidden sm:inline">Média de notas</span>
+                <span className="sm:hidden">Média</span>
+              </div>
               <div className="w-[280px] text-center flex-shrink-0">Performance</div>
-              <div className="w-32 text-center flex-shrink-0">Ligações com falha</div>
-              <div className="w-32 text-center flex-shrink-0">Total de ligações</div>
+              <div className="w-32 text-center flex-shrink-0">
+                <span className="hidden sm:inline">Ligações com falha</span>
+                <span className="sm:hidden">Falhas</span>
+              </div>
+              <div className="w-32 text-center flex-shrink-0">
+                <span className="hidden sm:inline">Total de ligações</span>
+                <span className="sm:hidden">Total</span>
+              </div>
               <div className="w-12 flex-shrink-0"></div>
           </div>
         </div>
 
         {/* Table Rows */}
-          <div className="min-w-[800px] overflow-x-auto">
+          <div className="min-w-[800px] md:min-w-0">
           {paginatedLists.length > 0 ? (
             paginatedLists.map((list) => (
               <div 
@@ -803,9 +812,9 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                 onClick={() => onListClick(list.id, list.name)}
               >
                 <div className="flex items-center justify-between relative z-5">
-                    <div className="w-32 md:w-64 flex items-center gap-3 flex-shrink-0">
+                    <div className="w-32 md:w-64 flex items-center gap-2 md:gap-3 flex-shrink-0">
                       <span className="text-[#373753] text-sm md:text-base whitespace-nowrap truncate" title={cleanListName(list.name)}>
-                        {truncateText(cleanListName(list.name), window.innerWidth < 768 ? 24 : 48)}
+                        {truncateText(cleanListName(list.name), window.innerWidth < 768 ? 20 : 48)}
                     </span>
                     {list.hasAttention && (
                       <div className="relative group/tooltip pointer-events-auto">
@@ -817,10 +826,10 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                     )}
                   </div>
                     <div className="w-[108px] text-center flex-shrink-0">
-                    <span className={`${getScoreColor(parseFloat(list.average))} text-base font-medium`}>
+                    <span className={`${getScoreColor(parseFloat(list.average))} text-sm md:text-base font-medium`}>
                       {list.average}
                     </span>
-                    <span className="text-[#677c92] text-base">/10</span>
+                    <span className="text-[#677c92] text-sm md:text-base">/10</span>
                   </div>
                     <div className="w-[280px] px-1.5 relative z-15 pointer-events-auto flex-shrink-0">
                     <StatusBarTooltip
@@ -843,10 +852,10 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                       </div>
                     </StatusBarTooltip>
                   </div>
-                    <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
+                    <div className="w-32 text-center text-[#677c92] text-sm md:text-base flex-shrink-0">
                     {list.failedCalls}
                   </div>
-                    <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
+                    <div className="w-32 text-center text-[#677c92] text-sm md:text-base flex-shrink-0">
                     {list.totalCalls}
                   </div>
                     <div className="w-12 flex justify-center relative z-25 pointer-events-auto flex-shrink-0">
@@ -900,8 +909,8 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
 
         {/* Pagination */}
         {filteredLists.length > 0 && (
-          <div className="border-t border-[#e1e9f4] px-6 py-4">
-            <div className="flex items-center justify-between">
+          <div className="border-t border-[#e1e9f4] px-4 md:px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
               {/* Botão Anterior - Lado Esquerdo */}
               <div className="flex-shrink-0">
                 {totalPages > 1 ? (
@@ -913,7 +922,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                     className="flex items-center gap-1 px-3 py-1.5 text-sm border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Anterior
+                    <span className="hidden sm:inline">Anterior</span>
                   </Button>
                 ) : (
                   <div className="w-[88px]"></div>
@@ -921,10 +930,10 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
               </div>
 
               {/* Páginas Numeradas e Informações - Centro */}
-              <div className="flex items-center gap-4">
-                {/* Números das páginas */}
+              <div className="flex items-center gap-2 md:gap-4">
+                {/* Números das páginas - Apenas no desktop */}
                 {totalPages > 1 && (
-                  <div className="flex items-center gap-1">
+                  <div className="hidden md:flex items-center gap-1 flex-wrap justify-center">
                     {generatePageNumbers().map((page, index) => (
                       <React.Fragment key={index}>
                         {page === '...' ? (
@@ -949,7 +958,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                 )}
 
                 {/* Informações da página */}
-                <div className="text-[#677c92] text-sm whitespace-nowrap">
+                <div className="text-[#677c92] text-sm whitespace-nowrap text-center">
                   {Math.min(endIndex, filteredLists.length)} de {filteredLists.length} {filteredLists.length === 1 ? 'lista' : 'listas'}
                 </div>
               </div>
@@ -964,7 +973,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                     disabled={currentPage === totalPages}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm border-[#e1e9f4] text-[#677c92] hover:bg-[#f8fafc] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Próximo
+                    <span className="hidden sm:inline">Próximo</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 ) : (
