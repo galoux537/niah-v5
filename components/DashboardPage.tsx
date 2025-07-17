@@ -741,7 +741,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
       </div>
 
       {/* Lists Table */}
-      <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)]">
+      <div className="bg-white rounded-xl border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.03)] relative">
         {/* Search and Actions */}
         <div className="flex items-center justify-between py-4 px-4 md:px-6">
           <div className="flex items-center gap-3 flex-1 max-w-md">
@@ -757,9 +757,9 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         </div>
 
         {/* Tabela com scroll horizontal */}
-        <div className="overflow-x-auto">
+        <div className="relative">
         {/* Table Header */}
-          <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-4 md:px-6 py-3 min-w-[800px]">
+          <div className="bg-[#f0f4fa] border-t border-[#e1e9f4] px-4 md:px-6 py-3 min-w-[800px] relative z-50">
           <div className="flex items-center justify-between text-[#677c92] text-xs uppercase tracking-wide">
               <div className="w-32 md:w-64 flex-shrink-0">Nome da lista</div>
               <div className="w-[108px] text-center flex-shrink-0">Média de notas</div>
@@ -771,7 +771,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
         </div>
 
         {/* Table Rows */}
-          <div className="min-w-[800px]">
+          <div className="min-w-[800px] overflow-x-auto">
           {paginatedLists.length > 0 ? (
             paginatedLists.map((list) => (
               <div 
@@ -779,15 +779,15 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                   className="border-b border-[#e1e9f4] px-4 md:px-6 py-2 hover:bg-gray-50 group relative cursor-pointer"
                 onClick={() => onListClick(list.id, list.name)}
               >
-                <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center justify-between relative z-5">
                     <div className="w-32 md:w-64 flex items-center gap-3 flex-shrink-0">
                       <span className="text-[#373753] text-sm md:text-base whitespace-nowrap truncate" title={cleanListName(list.name)}>
                         {truncateText(cleanListName(list.name), window.innerWidth < 768 ? 24 : 48)}
                     </span>
                     {list.hasAttention && (
                       <div className="relative group/tooltip pointer-events-auto">
-                        <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0 cursor-help relative z-30" />
-                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.1)] rounded-lg text-sm text-[#373753] whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999]">
+                        <AlertTriangle className="h-4 w-4 text-[#e67c0b] flex-shrink-0 cursor-help relative z-25" />
+                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-white border border-[#e1e9f4] shadow-[0px_12px_24px_0px_rgba(18,38,63,0.1)] rounded-lg text-sm text-[#373753] whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[99999]">
                           Contém ligação com nota inferior a 4.0
                         </div>
                       </div>
@@ -799,7 +799,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                     </span>
                     <span className="text-[#677c92] text-base">/10</span>
                   </div>
-                    <div className="w-[280px] px-1.5 relative z-20 pointer-events-auto flex-shrink-0">
+                    <div className="w-[280px] px-1.5 relative z-15 pointer-events-auto flex-shrink-0">
                     <StatusBarTooltip
                       performance={list.performance}
                       totalCalls={list.totalCalls}
@@ -826,7 +826,7 @@ export function DashboardPage({ onListClick }: DashboardPageProps) {
                     <div className="w-32 text-center text-[#677c92] text-base flex-shrink-0">
                     {list.totalCalls}
                   </div>
-                    <div className="w-12 flex justify-center relative z-30 pointer-events-auto flex-shrink-0">
+                    <div className="w-12 flex justify-center relative z-25 pointer-events-auto flex-shrink-0">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
