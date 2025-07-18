@@ -513,27 +513,68 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     
     // Organizar dados por índice
     const organizedData = [];
-    const maxIndex = Math.max(
-      Math.max(...Object.keys(indexedFiles).map(Number), -1),
-      Math.max(...Object.keys(indexedMetadata).map(Number), -1),
-      Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
-      Math.max(...Object.keys(indexedUrls).map(Number), -1) // Incluir URLs no cálculo do maxIndex
+    
+    // Verificar se há apenas um arquivo mas múltiplas ligações
+    const hasSingleFile = indexedFiles[0] && !indexedFiles[1];
+    const hasMultipleUrls = Object.keys(indexedUrls).length > 1;
+    const totalLigacoes = Math.max(
+      Object.keys(indexedMetadata).length,
+      Object.keys(indexedPhoneNumbers).length,
+      Object.keys(indexedUrls).length,
+      1 // Mínimo de 1 ligação
     );
     
-    console.log(`📊 Cálculo do maxIndex:`);
-    console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
-    console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
-    console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
-    console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
-    console.log(`  - maxIndex calculado:`, maxIndex);
+    console.log(`🔍 Análise de arquivos e URLs:`);
+    console.log(`  - Arquivo único detectado: ${hasSingleFile}`);
+    console.log(`  - URLs múltiplas detectadas: ${hasMultipleUrls}`);
+    console.log(`  - Total de ligações: ${totalLigacoes}`);
+    console.log(`  - Arquivos disponíveis: ${Object.keys(indexedFiles).filter(k => indexedFiles[k]).length}`);
+    console.log(`  - URLs disponíveis: ${Object.keys(indexedUrls).length}`);
     
-    for (let i = 0; i <= maxIndex; i++) {
-      organizedData.push({
-        file: indexedFiles[i] || null, // Pode ser null se o arquivo não chegou
-        metadata: indexedMetadata[i] || null,
-        phoneNumber: indexedPhoneNumbers[i] || null,
-        index: i
-      });
+    // Se há apenas um arquivo mas múltiplas ligações, reutilizar o arquivo
+    if (hasSingleFile && totalLigacoes > 1 && !hasMultipleUrls) {
+      console.log(`🔄 REUTILIZANDO ARQUIVO: Um arquivo será usado para ${totalLigacoes} ligações`);
+      
+      const sharedFile = indexedFiles[0];
+      
+      // Criar uma ligação para cada metadata/telefone encontrado
+      for (let i = 0; i < totalLigacoes; i++) {
+        const metadata = indexedMetadata[i];
+        const phoneNumber = indexedPhoneNumbers[i];
+        
+        organizedData.push({
+          index: i,
+          file: sharedFile, // Mesmo arquivo para todas
+          metadata: metadata || null,
+          phoneNumber: phoneNumber || null
+        });
+      }
+    } else {
+      // Processamento normal: cada índice tem seu próprio arquivo/URL
+      console.log(`📁 PROCESSAMENTO NORMAL: Cada ligação com seu próprio arquivo/URL`);
+      
+      const maxIndex = Math.max(
+        Math.max(...Object.keys(indexedFiles).map(Number), -1),
+        Math.max(...Object.keys(indexedMetadata).map(Number), -1),
+        Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
+        Math.max(...Object.keys(indexedUrls).map(Number), -1)
+      );
+      
+      console.log(`📊 Cálculo do maxIndex:`);
+      console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
+      console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
+      console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
+      console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
+      console.log(`  - maxIndex calculado:`, maxIndex);
+      
+      for (let i = 0; i <= maxIndex; i++) {
+        organizedData.push({
+          file: indexedFiles[i] || null, // Pode ser null se o arquivo não chegou
+          metadata: indexedMetadata[i] || null,
+          phoneNumber: indexedPhoneNumbers[i] || null,
+          index: i
+        });
+      }
     }
     
     console.log(`📋 organizedData criado:`, organizedData.map(item => ({
