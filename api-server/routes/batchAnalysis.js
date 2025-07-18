@@ -909,8 +909,8 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
             
             // Delay entre processamento de ligações para evitar sobrecarga
             if (index > 0) {
-              console.log(`⏳ Aguardando 2 segundos antes de processar próxima ligação...`);
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              console.log(`⏳ Aguardando 5 segundos antes de processar próxima ligação...`);
+              await new Promise(resolve => setTimeout(resolve, 5000)); // Aumentado de 2 para 5 segundos
             }
             
             try {
@@ -1414,13 +1414,16 @@ async function sendWebhook(url, data) {
   webhookRateLimit.set(url, recentWebhooks);
   
   // Verificar se excedeu o limite
-  if (recentWebhooks.length >= 10) {
-    console.warn(`⚠️ Rate limit atingido para ${url}. Aguardando 1 minuto...`);
-    // Aguardar 1 minuto antes de tentar novamente
-    await new Promise(resolve => setTimeout(resolve, oneMinute));
+  if (recentWebhooks.length >= 5) { // Reduzido de 10 para 5
+    console.warn(`⚠️ Rate limit atingido para ${url}. Aguardando 2 minutos...`);
+    // Aguardar 2 minutos antes de tentar novamente
+    await new Promise(resolve => setTimeout(resolve, 2 * oneMinute));
   }
   
   try {
+    // Aguardar um pouco antes de enviar webhook para evitar rate limiting
+    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos de delay
+    
     console.log(`📤 Enviando webhook para: ${url}`);
     console.log(`📋 Evento: ${data.event}`);
     
