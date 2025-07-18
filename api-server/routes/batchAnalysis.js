@@ -450,11 +450,11 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       if (indexedUrls[i]) {
         console.log(`🔄 Iniciando download da URL ${i}: ${indexedUrls[i]}`);
         
-        // Para todos os índices, tentar baixar (todos são importantes)
+        // Para todos os índices, usar Promise com delay para evitar rate limiting
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         
         downloadPromises.push(
-          delay(2000) // 2 segundos de delay entre downloads
+          delay(2000 * i) // Delay progressivo para evitar rate limiting
             .then(() => downloadAudioFromUrl(indexedUrls[i], i, i === 0)) // isRequired = true apenas para índice 0
             .then(file => {
               indexedFiles[i] = file;
@@ -838,12 +838,15 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           let totalCriteria = 0;
           let subCriteriaList = [];
           
+          // Contar apenas arquivos válidos
+          const validFilesCount = organizedData.filter(item => item.file).length;
+          
           const startPayload = {
             event: 'batch_started',
             batch_id: batchId,
             company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
             status: 'processing',
-            files_count: organizedData.length,
+            files_count: validFilesCount,
             criteria_group_applied: {
               name: criteriaGroupName,
               description: criteriaGroupDescription,
@@ -1319,7 +1322,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         name: req.user.name,
         company: req.user.company_name
       },
-                  files_processed: validFilesCount
+              files_processed: validFilesCount
     });
     
   } catch (error) {
