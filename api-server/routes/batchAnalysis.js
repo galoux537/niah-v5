@@ -1553,7 +1553,8 @@ REGRAS DE SCORING:
 - Atendimento excelente: 9-10 pontos
 
 Seja BRUTALMENTE HONESTO e ESPECÍFICO. Use nomes, produtos e situações da transcrição real.
-Responda APENAS com JSON válido, sem texto adicional.
+
+⚠️ REGRA CRÍTICA: Responda APENAS com JSON válido, sem texto adicional, sem explicações, sem markdown, sem aspas extras. O JSON deve começar com { e terminar com }.
 `;
 
     // Criar com timeout manual
@@ -1563,7 +1564,7 @@ Responda APENAS com JSON válido, sem texto adicional.
         messages: [
           {
             role: "system",
-            content: "Você é um especialista em análise de atendimento. Responda apenas com JSON válido em português."
+            content: "Você é um especialista em análise de atendimento. IMPORTANTE: Responda APENAS com JSON válido, sem texto adicional, sem explicações, sem markdown. O JSON deve começar com { e terminar com }."
           },
           {
             role: "user", 
@@ -1581,33 +1582,108 @@ Responda APENAS com JSON válido, sem texto adicional.
     const analysisText = completion.choices[0].message.content.trim();
     
     try {
-      const analysis = JSON.parse(analysisText);
+      // Tentar extrair JSON da resposta (caso a IA tenha adicionado texto extra)
+      let jsonText = analysisText;
+      
+      // Se a resposta não começa com {, tentar encontrar o JSON
+      if (!analysisText.trim().startsWith('{')) {
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[0];
+          console.log('🔧 JSON extraído da resposta da IA');
+        }
+      }
+      
+      const analysis = JSON.parse(jsonText);
+      
+      // Validar estrutura obrigatória
+      if (typeof analysis.overall_score !== 'number' || analysis.overall_score < 0 || analysis.overall_score > 10) {
+        throw new Error('Score geral inválido');
+      }
+      
+      if (!analysis.criteria_scores || typeof analysis.criteria_scores !== 'object') {
+        throw new Error('Scores por critério inválidos');
+      }
+      
+      if (!analysis.summary || typeof analysis.summary !== 'string') {
+        throw new Error('Resumo inválido');
+      }
+      
       console.log(`✅ Análise GPT-4o concluída. Score: ${analysis.overall_score}/10`);
       return analysis;
     } catch (parseError) {
       console.error('❌ Erro ao fazer parse da análise GPT-4o:', parseError);
       console.log('Resposta da IA:', analysisText);
       
-      // Fallback: estrutura básica com dados do contexto
-      const criteriaNames = Object.keys(criteria);
-      const fallbackScores = {};
-      criteriaNames.forEach(criterion => {
-        fallbackScores[criterion] = 5.0; // Score neutro
-      });
-      
-      return {
-        overall_score: 5.0,
-        criteria_scores: fallbackScores,
-        summary: `Erro na análise automática. ${contextInfo}. Transcrição processada mas análise precisa ser revisada manualmente.`,
-        feedback: criteriaNames.reduce((acc, criterion) => {
-          acc[criterion] = `Análise manual necessária para ${criterion}`;
-          return acc;
-        }, {}),
-        highlights: ["Análise manual necessária"],
-        improvements: ["Rever análise automática"],
-        sentiment: "neutro",
-        call_outcome: "sem_conclusao"
-      };
+      // Tentar uma segunda vez com prompt mais específico
+      try {
+        console.log('🔄 Tentando segunda análise com prompt mais específico...');
+        
+        const retryPrompt = `Analise esta transcrição e responda APENAS com JSON válido:
+
+TRANSCRIÇÃO: ${transcript}
+
+CRITÉRIOS: ${JSON.stringify(criteria, null, 2)}
+
+Responda APENAS com este JSON (sem texto adicional):
+{
+  "overall_score": [número de 0 a 10],
+  "criteria_scores": {[critério]: [score]},
+  "summary": "[resumo específico]",
+  "feedback": {[critério]: "[feedback]"},
+  "highlights": ["[ponto positivo]"],
+  "improvements": ["[melhoria]"],
+  "sentiment": "[positivo|neutro|negativo]",
+  "call_outcome": "[resolvido|parcialmente_resolvido|nao_resolvido|sem_conclusao]"
+}`;
+
+        const retryCompletion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "Você é um analisador de atendimento. Responda APENAS com JSON válido, sem texto adicional."
+            },
+            {
+              role: "user",
+              content: retryPrompt
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 2000
+        });
+
+        const retryText = retryCompletion.choices[0].message.content.trim();
+        const retryJson = retryText.match(/\{[\s\S]*\}/)?.[0] || retryText;
+        const retryAnalysis = JSON.parse(retryJson);
+        
+        console.log(`✅ Segunda análise GPT-4o concluída. Score: ${retryAnalysis.overall_score}/10`);
+        return retryAnalysis;
+        
+      } catch (retryError) {
+        console.error('❌ Segunda tentativa também falhou:', retryError);
+        
+        // Fallback: estrutura básica com dados do contexto
+        const criteriaNames = Object.keys(criteria);
+        const fallbackScores = {};
+        criteriaNames.forEach(criterion => {
+          fallbackScores[criterion] = 5.0; // Score neutro
+        });
+        
+        return {
+          overall_score: 5.0,
+          criteria_scores: fallbackScores,
+          summary: `Erro na análise automática. ${contextInfo}. Transcrição processada mas análise precisa ser revisada manualmente.`,
+          feedback: criteriaNames.reduce((acc, criterion) => {
+            acc[criterion] = `Análise manual necessária para ${criterion}`;
+            return acc;
+          }, {}),
+          highlights: ["Análise manual necessária"],
+          improvements: ["Rever análise automática"],
+          sentiment: "neutro",
+          call_outcome: "sem_conclusao"
+        };
+      }
     }
   } catch (error) {
     console.error('❌ Erro na análise GPT-4o:', error);
