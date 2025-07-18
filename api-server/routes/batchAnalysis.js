@@ -442,33 +442,67 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       }
     };
     
-    // Baixar áudios de URLs - VOLTANDO AO COMPORTAMENTO ANTERIOR
+    // Baixar áudios de URLs
+    const downloadPromises = [];
     console.log(`📊 URLs para download:`, indexedUrls);
     
-    // Baixar apenas URLs que existem, com prioridade para índice 0
     for (let i = 0; i < indexedUrls.length; i++) {
       if (indexedUrls[i]) {
         console.log(`🔄 Iniciando download da URL ${i}: ${indexedUrls[i]}`);
         
-        try {
-          // Para índice 0, é obrigatório. Para outros, é opcional
-          const isRequired = (i === 0);
-          const file = await downloadAudioFromUrl(indexedUrls[i], i, isRequired);
-          
-          indexedFiles[i] = file;
-          console.log(`✅ URL ${i} convertida para arquivo: ${file.originalname}`);
-          
-          // Se não é obrigatório e falhou, apenas logar e continuar
-        } catch (error) {
-          console.error(`❌ Falha na conversão da URL ${i}:`, error.message);
-          
-          // Se é obrigatório (índice 0) e falhou, parar o processamento
-          if (isRequired) {
-            throw new Error(`Falha obrigatória na URL ${i}: ${error.message}`);
+        // Para o índice 0 (obrigatório), usar Promise direto para capturar erro
+        if (i === 0) {
+          try {
+            const file = await downloadAudioFromUrl(indexedUrls[i], i, true); // isRequired = true
+            indexedFiles[i] = file;
+            console.log(`✅ URL ${i} (OBRIGATÓRIA) convertida para arquivo: ${file.originalname}`);
+          } catch (error) {
+            console.error(`❌ ERRO CRÍTICO: Falha no download da URL ${i} (OBRIGATÓRIA):`, error.message);
+            return res.status(400).json({
+              error: 'AUDIO_0_DOWNLOAD_FAILED',
+              message: `Falha ao baixar áudio obrigatório (índice 0): ${error.message}`,
+              details: `URL: ${indexedUrls[i]}`
+            });
           }
-          // Se não é obrigatório, apenas continuar sem o arquivo
+        } else {
+          // Para outros índices (opcionais), adicionar delay para evitar rate limiting
+          const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+          
+          downloadPromises.push(
+            delay(2000) // 2 segundos de delay entre downloads
+              .then(() => downloadAudioFromUrl(indexedUrls[i], i, false)) // isRequired = false
+              .then(file => {
+                indexedFiles[i] = file;
+                console.log(`✅ URL ${i} (opcional) convertida para arquivo: ${file.originalname}`);
+                return { success: true, index: i, file };
+              })
+              .catch(error => {
+                console.error(`❌ Falha na conversão da URL ${i} (opcional):`, error.message);
+                return { success: false, index: i, error: error.message };
+              })
+          );
         }
       }
+    }
+    
+    // Aguardar downloads opcionais (índices > 0)
+    if (downloadPromises.length > 0) {
+      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs opcionais...`);
+      const results = await Promise.allSettled(downloadPromises);
+      
+      console.log(`📊 Resultados dos downloads opcionais:`);
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          const data = result.value;
+          if (data.success) {
+            console.log(`✅ URL ${data.index}: Download bem-sucedido`);
+          } else {
+            console.log(`❌ URL ${data.index}: Falhou - ${data.error}`);
+          }
+        } else {
+          console.log(`❌ URL ${i}: Promise rejeitada - ${result.reason}`);
+        }
+      });
     }
     
     console.log(`📊 indexedFiles após downloads:`, Object.keys(indexedFiles).map(k => ({
@@ -477,43 +511,30 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       filename: indexedFiles[k]?.originalname
     })));
     
-    // Organizar dados por índice - APENAS índices que têm dados
+    // Organizar dados por índice
     const organizedData = [];
+    const maxIndex = Math.max(
+      Math.max(...Object.keys(indexedFiles).map(Number), -1),
+      Math.max(...Object.keys(indexedMetadata).map(Number), -1),
+      Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
+      Math.max(...Object.keys(indexedUrls).map(Number), -1) // Incluir URLs no cálculo do maxIndex
+    );
     
-    // Processar apenas índices que têm arquivos (prioridade) ou URLs
-    const validIndices = new Set();
-    
-    // Adicionar índices que têm arquivos
-    Object.keys(indexedFiles).forEach(key => {
-      if (indexedFiles[key]) {
-        validIndices.add(Number(key));
-      }
-    });
-    
-    // Adicionar índices que têm URLs (se não têm arquivo)
-    Object.keys(indexedUrls).forEach(key => {
-      const numKey = Number(key);
-      if (indexedUrls[key] && !indexedFiles[numKey]) {
-        validIndices.add(numKey);
-      }
-    });
-    
-    const sortedIndices = Array.from(validIndices).sort((a, b) => a - b);
-    
-    console.log(`📊 Índices válidos encontrados:`);
+    console.log(`📊 Cálculo do maxIndex:`);
     console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
+    console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
+    console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
     console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
-    console.log(`  - Índices válidos para processamento:`, sortedIndices);
+    console.log(`  - maxIndex calculado:`, maxIndex);
     
-    // Criar organizedData apenas para índices válidos
-    sortedIndices.forEach(i => {
+    for (let i = 0; i <= maxIndex; i++) {
       organizedData.push({
-        file: indexedFiles[i] || null,
+        file: indexedFiles[i] || null, // Pode ser null se o arquivo não chegou
         metadata: indexedMetadata[i] || null,
         phoneNumber: indexedPhoneNumbers[i] || null,
         index: i
       });
-    });
+    }
     
     console.log(`📋 organizedData criado:`, organizedData.map(item => ({
       index: item.index,
@@ -828,15 +849,12 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           let totalCriteria = 0;
           let subCriteriaList = [];
           
-          // Contar apenas arquivos válidos
-          const validFilesCount = organizedData.filter(item => item.file).length;
-          
           const startPayload = {
             event: 'batch_started',
             batch_id: batchId,
             company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
             status: 'processing',
-            files_count: validFilesCount,
+            files_count: organizedData.length,
             criteria_group_applied: {
               name: criteriaGroupName,
               description: criteriaGroupDescription,
@@ -939,7 +957,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                   batch_id: batchId,
                   company_id: req.user.company_id,
                   call_index: callData.index + 1,
-                  total_calls: validFilesCount,
+                  total_calls: organizedData.length,
                   file_name: fileNameSafe,
                   file_size: fileSizeSafe,
                   status: 'failed',
@@ -1038,7 +1056,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                   batch_id: batchId,
                   company_id: req.user.company_id,
                   call_index: callData.index + 1,
-                  total_calls: validFilesCount,
+                  total_calls: organizedData.length,
                   file_name: fileNameSafe,
                   file_size: file.size,
                   status: 'failed',
@@ -1079,7 +1097,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                 batch_id: batchId,
                 company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
                 call_index: callData.index + 1,
-                total_calls: validFilesCount,
+                total_calls: organizedData.length,
                 file_id: `file_${callData.index}_${Date.now()}`,
                 file_name: fileNameSafe,
                 file_size: file.size,
@@ -1175,7 +1193,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                 batch_id: batchId,
                 company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
                 call_index: callData.index + 1,
-                total_calls: validFilesCount,
+                total_calls: organizedData.length,
                 file_name: fileNameSafe,
                 file_size: file.size,
                 status: 'failed',
@@ -1205,7 +1223,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           const successfulResults = batchResults.filter(r => r.success);
           const failedResults = batchResults.filter(r => !r.success);
           
-          const totalFiles = validFilesCount;
+          const totalFiles = organizedData.length;
           const successfulAnalyses = successfulResults.length;
           const failedAnalyses = failedResults.length;
           
@@ -1239,7 +1257,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
             batch_id: batchId,
             company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
             status: 'completed',
-            files_count: validFilesCount,
+            files_count: organizedData.length,
             summary: {
                   total_files: totalFiles,
                   successful_analyses: successfulAnalyses,
@@ -1312,7 +1330,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         name: req.user.name,
         company: req.user.company_name
       },
-              files_processed: validFilesCount
+      files_processed: organizedData.length
     });
     
   } catch (error) {
