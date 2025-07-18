@@ -450,47 +450,31 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       if (indexedUrls[i]) {
         console.log(`🔄 Iniciando download da URL ${i}: ${indexedUrls[i]}`);
         
-        // Para o índice 0 (obrigatório), usar Promise direto para capturar erro
-        if (i === 0) {
-          try {
-            const file = await downloadAudioFromUrl(indexedUrls[i], i, true); // isRequired = true
-            indexedFiles[i] = file;
-            console.log(`✅ URL ${i} (OBRIGATÓRIA) convertida para arquivo: ${file.originalname}`);
-          } catch (error) {
-            console.error(`❌ ERRO CRÍTICO: Falha no download da URL ${i} (OBRIGATÓRIA):`, error.message);
-            return res.status(400).json({
-              error: 'AUDIO_0_DOWNLOAD_FAILED',
-              message: `Falha ao baixar áudio obrigatório (índice 0): ${error.message}`,
-              details: `URL: ${indexedUrls[i]}`
-            });
-          }
-        } else {
-          // Para outros índices (opcionais), adicionar delay para evitar rate limiting
-          const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-          
-          downloadPromises.push(
-            delay(2000) // 2 segundos de delay entre downloads
-              .then(() => downloadAudioFromUrl(indexedUrls[i], i, false)) // isRequired = false
-              .then(file => {
-                indexedFiles[i] = file;
-                console.log(`✅ URL ${i} (opcional) convertida para arquivo: ${file.originalname}`);
-                return { success: true, index: i, file };
-              })
-              .catch(error => {
-                console.error(`❌ Falha na conversão da URL ${i} (opcional):`, error.message);
-                return { success: false, index: i, error: error.message };
-              })
-          );
-        }
+        // Para todos os índices, tentar baixar (todos são importantes)
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        downloadPromises.push(
+          delay(2000) // 2 segundos de delay entre downloads
+            .then(() => downloadAudioFromUrl(indexedUrls[i], i, i === 0)) // isRequired = true apenas para índice 0
+            .then(file => {
+              indexedFiles[i] = file;
+              console.log(`✅ URL ${i} convertida para arquivo: ${file.originalname}`);
+              return { success: true, index: i, file };
+            })
+            .catch(error => {
+              console.error(`❌ Falha na conversão da URL ${i}:`, error.message);
+              return { success: false, index: i, error: error.message };
+            })
+        );
       }
     }
     
-    // Aguardar downloads opcionais (índices > 0)
+    // Aguardar downloads de todas as URLs
     if (downloadPromises.length > 0) {
-      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs opcionais...`);
+      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs...`);
       const results = await Promise.allSettled(downloadPromises);
       
-      console.log(`📊 Resultados dos downloads opcionais:`);
+      console.log(`📊 Resultados dos downloads:`);
       results.forEach((result, i) => {
         if (result.status === 'fulfilled') {
           const data = result.value;
@@ -511,30 +495,35 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       filename: indexedFiles[k]?.originalname
     })));
     
-    // Organizar dados por índice
+    // Organizar dados por índice - APENAS índices que têm dados
     const organizedData = [];
-    const maxIndex = Math.max(
-      Math.max(...Object.keys(indexedFiles).map(Number), -1),
-      Math.max(...Object.keys(indexedMetadata).map(Number), -1),
-      Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
-      Math.max(...Object.keys(indexedUrls).map(Number), -1) // Incluir URLs no cálculo do maxIndex
-    );
     
-    console.log(`📊 Cálculo do maxIndex:`);
+    // Coletar todos os índices que têm pelo menos um tipo de dado
+    const allIndices = new Set([
+      ...Object.keys(indexedFiles).map(Number),
+      ...Object.keys(indexedMetadata).map(Number),
+      ...Object.keys(indexedPhoneNumbers).map(Number),
+      ...Object.keys(indexedUrls).map(Number)
+    ]);
+    
+    const sortedIndices = Array.from(allIndices).sort((a, b) => a - b);
+    
+    console.log(`📊 Índices encontrados com dados:`);
     console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
     console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
     console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
     console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
-    console.log(`  - maxIndex calculado:`, maxIndex);
+    console.log(`  - Todos os índices únicos:`, sortedIndices);
     
-    for (let i = 0; i <= maxIndex; i++) {
+    // Criar organizedData apenas para índices que têm dados
+    sortedIndices.forEach(i => {
       organizedData.push({
-        file: indexedFiles[i] || null, // Pode ser null se o arquivo não chegou
+        file: indexedFiles[i] || null,
         metadata: indexedMetadata[i] || null,
         phoneNumber: indexedPhoneNumbers[i] || null,
         index: i
       });
-    }
+    });
     
     console.log(`📋 organizedData criado:`, organizedData.map(item => ({
       index: item.index,
@@ -957,7 +946,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                   batch_id: batchId,
                   company_id: req.user.company_id,
                   call_index: callData.index + 1,
-                  total_calls: organizedData.length,
+                  total_calls: validFilesCount,
                   file_name: fileNameSafe,
                   file_size: fileSizeSafe,
                   status: 'failed',
@@ -1056,7 +1045,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                   batch_id: batchId,
                   company_id: req.user.company_id,
                   call_index: callData.index + 1,
-                  total_calls: organizedData.length,
+                  total_calls: validFilesCount,
                   file_name: fileNameSafe,
                   file_size: file.size,
                   status: 'failed',
@@ -1097,7 +1086,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                 batch_id: batchId,
                 company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
                 call_index: callData.index + 1,
-                total_calls: organizedData.length,
+                total_calls: validFilesCount,
                 file_id: `file_${callData.index}_${Date.now()}`,
                 file_name: fileNameSafe,
                 file_size: file.size,
@@ -1193,7 +1182,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                 batch_id: batchId,
                 company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
                 call_index: callData.index + 1,
-                total_calls: organizedData.length,
+                total_calls: validFilesCount,
                 file_name: fileNameSafe,
                 file_size: file.size,
                 status: 'failed',
@@ -1223,7 +1212,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
           const successfulResults = batchResults.filter(r => r.success);
           const failedResults = batchResults.filter(r => !r.success);
           
-          const totalFiles = organizedData.length;
+          const totalFiles = validFilesCount;
           const successfulAnalyses = successfulResults.length;
           const failedAnalyses = failedResults.length;
           
@@ -1257,7 +1246,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
             batch_id: batchId,
             company_id: req.user.company_id, // INCLUIR COMPANY_ID (será mascarado)
             status: 'completed',
-            files_count: organizedData.length,
+            files_count: validFilesCount,
             summary: {
                   total_files: totalFiles,
                   successful_analyses: successfulAnalyses,
@@ -1330,7 +1319,7 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
         name: req.user.name,
         company: req.user.company_name
       },
-      files_processed: organizedData.length
+                  files_processed: validFilesCount
     });
     
   } catch (error) {
