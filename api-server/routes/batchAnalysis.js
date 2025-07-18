@@ -442,51 +442,33 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
       }
     };
     
-    // Baixar áudios de URLs
-    const downloadPromises = [];
+    // Baixar áudios de URLs - VOLTANDO AO COMPORTAMENTO ANTERIOR
     console.log(`📊 URLs para download:`, indexedUrls);
     
+    // Baixar apenas URLs que existem, com prioridade para índice 0
     for (let i = 0; i < indexedUrls.length; i++) {
       if (indexedUrls[i]) {
         console.log(`🔄 Iniciando download da URL ${i}: ${indexedUrls[i]}`);
         
-        // Para todos os índices, usar Promise com delay para evitar rate limiting
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        
-        downloadPromises.push(
-          delay(2000 * i) // Delay progressivo para evitar rate limiting
-            .then(() => downloadAudioFromUrl(indexedUrls[i], i, i === 0)) // isRequired = true apenas para índice 0
-            .then(file => {
-              indexedFiles[i] = file;
-              console.log(`✅ URL ${i} convertida para arquivo: ${file.originalname}`);
-              return { success: true, index: i, file };
-            })
-            .catch(error => {
-              console.error(`❌ Falha na conversão da URL ${i}:`, error.message);
-              return { success: false, index: i, error: error.message };
-            })
-        );
-      }
-    }
-    
-    // Aguardar downloads de todas as URLs
-    if (downloadPromises.length > 0) {
-      console.log(`⏳ Aguardando download de ${downloadPromises.length} URLs...`);
-      const results = await Promise.allSettled(downloadPromises);
-      
-      console.log(`📊 Resultados dos downloads:`);
-      results.forEach((result, i) => {
-        if (result.status === 'fulfilled') {
-          const data = result.value;
-          if (data.success) {
-            console.log(`✅ URL ${data.index}: Download bem-sucedido`);
-          } else {
-            console.log(`❌ URL ${data.index}: Falhou - ${data.error}`);
+        try {
+          // Para índice 0, é obrigatório. Para outros, é opcional
+          const isRequired = (i === 0);
+          const file = await downloadAudioFromUrl(indexedUrls[i], i, isRequired);
+          
+          indexedFiles[i] = file;
+          console.log(`✅ URL ${i} convertida para arquivo: ${file.originalname}`);
+          
+          // Se não é obrigatório e falhou, apenas logar e continuar
+        } catch (error) {
+          console.error(`❌ Falha na conversão da URL ${i}:`, error.message);
+          
+          // Se é obrigatório (índice 0) e falhou, parar o processamento
+          if (isRequired) {
+            throw new Error(`Falha obrigatória na URL ${i}: ${error.message}`);
           }
-        } else {
-          console.log(`❌ URL ${i}: Promise rejeitada - ${result.reason}`);
+          // Se não é obrigatório, apenas continuar sem o arquivo
         }
-      });
+      }
     }
     
     console.log(`📊 indexedFiles após downloads:`, Object.keys(indexedFiles).map(k => ({
@@ -498,24 +480,32 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     // Organizar dados por índice - APENAS índices que têm dados
     const organizedData = [];
     
-    // Coletar todos os índices que têm pelo menos um tipo de dado
-    const allIndices = new Set([
-      ...Object.keys(indexedFiles).map(Number),
-      ...Object.keys(indexedMetadata).map(Number),
-      ...Object.keys(indexedPhoneNumbers).map(Number),
-      ...Object.keys(indexedUrls).map(Number)
-    ]);
+    // Processar apenas índices que têm arquivos (prioridade) ou URLs
+    const validIndices = new Set();
     
-    const sortedIndices = Array.from(allIndices).sort((a, b) => a - b);
+    // Adicionar índices que têm arquivos
+    Object.keys(indexedFiles).forEach(key => {
+      if (indexedFiles[key]) {
+        validIndices.add(Number(key));
+      }
+    });
     
-    console.log(`📊 Índices encontrados com dados:`);
+    // Adicionar índices que têm URLs (se não têm arquivo)
+    Object.keys(indexedUrls).forEach(key => {
+      const numKey = Number(key);
+      if (indexedUrls[key] && !indexedFiles[numKey]) {
+        validIndices.add(numKey);
+      }
+    });
+    
+    const sortedIndices = Array.from(validIndices).sort((a, b) => a - b);
+    
+    console.log(`📊 Índices válidos encontrados:`);
     console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
-    console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
-    console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
     console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
-    console.log(`  - Todos os índices únicos:`, sortedIndices);
+    console.log(`  - Índices válidos para processamento:`, sortedIndices);
     
-    // Criar organizedData apenas para índices que têm dados
+    // Criar organizedData apenas para índices válidos
     sortedIndices.forEach(i => {
       organizedData.push({
         file: indexedFiles[i] || null,
