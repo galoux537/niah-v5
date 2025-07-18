@@ -32,7 +32,7 @@ NIAHv5/
 
 ### 2. **Processamento Automático** ✅
 - ✅ **Transcrição**: OpenAI Whisper API
-- ✅ **Análise IA**: GPT-4 com critérios personalizados
+- ✅ **Análise IA**: GPT-4o com critérios personalizados
 - ✅ **JSON estruturado**: pontuações, feedbacks, melhorias
 - ✅ **Persistência**: Salva no Supabase (tabela `calls`)
 
@@ -46,7 +46,7 @@ NIAHv5/
 
 - **Backend**: Node.js + Express
 - **Transcrição**: OpenAI Whisper API
-- **Análise**: OpenAI GPT-4 Turbo
+- **Análise**: OpenAI GPT-4o
 - **Banco**: Supabase (PostgreSQL)
 - **Upload**: Multer (multipart/form-data)
 - **Multitenant**: Header `x-company-id`
@@ -183,7 +183,7 @@ O resultado da análise inclui:
 
 ✅ **Endpoint HTTP funcional**  
 ✅ **Transcrição automática (Whisper)**  
-✅ **Análise por IA (GPT-4)**  
+✅ **Análise por IA (GPT-4o)**  
 ✅ **Critérios personalizáveis**  
 ✅ **Webhook assíncrono**  
 ✅ **Multitenant**  

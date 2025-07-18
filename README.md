@@ -12,7 +12,7 @@
 - **Ausência de dados objetivos** para tomada de decisão
 
 ### ✨ Solução Oferecida
-- **Análise automatizada** usando AI (OpenAI GPT-4 + Whisper)
+- **Análise automatizada** usando AI (OpenAI GPT-4o + Whisper)
 - **Critérios customizáveis** por empresa/campanha
 - **Processamento em lote** de até 50 ligações simultâneas
 - **Relatórios detalhados** com scores e feedback específico
@@ -42,7 +42,7 @@
 
 #### **Inteligência Artificial**
 - **OpenAI Whisper** para transcrição de áudio
-- **OpenAI GPT-4** para análise de sentimentos e critérios
+- **OpenAI GPT-4o** para análise de sentimentos e critérios
 - **Processamento assíncrono** para otimização
 
 #### **Infraestrutura**
@@ -243,7 +243,7 @@ DELETE /criteria/:id
 graph TD
     A[Upload de Áudio] --> B[Validação do Arquivo]
     B --> C[Transcrição via Whisper]
-    C --> D[Análise via GPT-4]
+    C --> D[Análise via GPT-4o]
     D --> E[Cálculo de Scores]
     E --> F[Geração de Feedback]
     F --> G[Salvamento no Banco]
@@ -395,8 +395,8 @@ O sistema vem com templates pré-configurados:
 - **Confiabilidade**: 85-98% de precisão
 - **Tempo de processamento**: ~1 minuto para 5 minutos de áudio
 
-### 🧠 **Análise (OpenAI GPT-4)**
-- **Modelo**: GPT-4 (mais recente disponível)
+### 🧠 **Análise (OpenAI GPT-4o)**
+- **Modelo**: GPT-4o (mais recente disponível)
 - **Contexto**: Prompt especializado em atendimento
 - **Saída estruturada**: JSON com scores e feedback
 - **Temperatura**: 0.3 (respostas consistentes)
@@ -656,7 +656,7 @@ npm run dev
 ```json
 {
   "openai": {
-    "model": "gpt-4",
+    "model": "gpt-4o",
     "temperature": 0.3,
     "max_tokens": 3000,
     "timeout": 180000

@@ -329,11 +329,11 @@ async function transcribeAudio(audioBuffer, filename) {
 }
 ```
 
-**Análise (GPT-4):**
+**Análise (GPT-4o):**
 ```javascript
 async function analyzeTranscription(transcript, criteria, metadata, campaign, agent) {
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4',
+    model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.3,
     max_tokens: 2000

@@ -1471,7 +1471,7 @@ async function transcribeAudio(audioBuffer, filename) {
   }
 }
 
-// Análise real usando GPT-4
+// Análise real usando GPT-4o
 async function analyzeTranscription(transcript, criteria, metadata = {}, campaign = '', agent = '') {
   try {
     const OpenAI = require('openai');
@@ -1559,7 +1559,7 @@ Responda APENAS com JSON válido, sem texto adicional.
     // Criar com timeout manual
     const completion = await Promise.race([
       openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -1574,7 +1574,7 @@ Responda APENAS com JSON válido, sem texto adicional.
         max_tokens: 3000
       }),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout na análise GPT-4')), 3 * 60 * 1000)
+        setTimeout(() => reject(new Error('Timeout na análise GPT-4o')), 3 * 60 * 1000)
       )
     ]);
 
@@ -1582,10 +1582,10 @@ Responda APENAS com JSON válido, sem texto adicional.
     
     try {
       const analysis = JSON.parse(analysisText);
-      console.log(`✅ Análise GPT-4 concluída. Score: ${analysis.overall_score}/10`);
+      console.log(`✅ Análise GPT-4o concluída. Score: ${analysis.overall_score}/10`);
       return analysis;
     } catch (parseError) {
-      console.error('❌ Erro ao fazer parse da análise GPT-4:', parseError);
+      console.error('❌ Erro ao fazer parse da análise GPT-4o:', parseError);
       console.log('Resposta da IA:', analysisText);
       
       // Fallback: estrutura básica com dados do contexto
@@ -1610,7 +1610,7 @@ Responda APENAS com JSON válido, sem texto adicional.
       };
     }
   } catch (error) {
-    console.error('❌ Erro na análise GPT-4:', error);
+    console.error('❌ Erro na análise GPT-4o:', error);
     throw new Error(`Falha na análise da transcrição: ${error.message}`);
   }
 }
@@ -2655,13 +2655,13 @@ async function generateCallResult(file, criteriaApplied, companyId, index, metad
     actualTranscription = false;
   }
   
-  // ANÁLISE usando GPT-4 (real se transcrição for real, simulada caso contrário)
+  // ANÁLISE usando GPT-4o (real se transcrição for real, simulada caso contrário)
   let overallScore;
   let analysisResult = null;
   
   if (actualTranscription && process.env.OPENAI_API_KEY) {
     try {
-      console.log(`🧠 Iniciando análise real com GPT-4`);
+      console.log(`🧠 Iniciando análise real com GPT-4o`);
       analysisResult = await analyzeTranscription(transcription, criteriaApplied, metadata);
       overallScore = analysisResult.overall_score;
       console.log(`✅ Análise real concluída: Score ${overallScore}/10`);
@@ -2760,11 +2760,11 @@ async function generateCallResult(file, criteriaApplied, companyId, index, metad
     criteriaFeedback = { 'erro': 'Nenhum critério foi especificado na requisição' };
   }
   
-  // Usar dados REAIS da análise GPT-4 quando disponível
+  // Usar dados REAIS da análise GPT-4o quando disponível
   let highlights, improvements, sentiment, callOutcome, summary;
   
   if (analysisResult) {
-    console.log(`🎯 DEBUG: AnalysisResult recebido do GPT-4:`, {
+    console.log(`🎯 DEBUG: AnalysisResult recebido do GPT-4o:`, {
       overall_score: analysisResult.overall_score,
       summary: analysisResult.summary,
       highlights: analysisResult.highlights,
@@ -2773,8 +2773,8 @@ async function generateCallResult(file, criteriaApplied, companyId, index, metad
       call_outcome: analysisResult.call_outcome
     });
 
-    // ✅ CORREÇÃO: SEMPRE usar dados REAIS do GPT-4, nunca fallbacks genéricos
-    summary = analysisResult.summary; // ✅ Sempre usar o resumo real do GPT-4
+    // ✅ CORREÇÃO: SEMPRE usar dados REAIS do GPT-4o, nunca fallbacks genéricos
+    summary = analysisResult.summary; // ✅ Sempre usar o resumo real do GPT-4o
     highlights = analysisResult.highlights || []; // ✅ Usar highlights reais, vazio se não houver
     improvements = analysisResult.improvements || []; // ✅ Usar improvements reais, vazio se não houver
     sentiment = analysisResult.sentiment || 'neutro';
@@ -2816,7 +2816,7 @@ async function generateCallResult(file, criteriaApplied, companyId, index, metad
         
         totalScoreSum += individualScore;
         
-        // Buscar feedback específico do GPT-4 ou gerar baseado no score individual
+        // Buscar feedback específico do GPT-4o ou gerar baseado no score individual
         const gptFeedback = analysisResult && analysisResult.feedback && analysisResult.feedback[subCriterion.name] ||
                            generateCriteriaFeedback(subCriterion.name, individualScore, subCriterion);
         
@@ -2847,8 +2847,8 @@ async function generateCallResult(file, criteriaApplied, companyId, index, metad
       console.log(`✅ Scores individuais aplicados:`, Object.values(individualCriteriaScores).map(s => `${s.name}: ${s.score}`));
     }
   } else {
-    // ❌ ERRO: Sem análise do GPT-4 - usar fallbacks básicos
-    console.error(`❌ Nenhuma análise real do GPT-4 disponível. Usando fallbacks básicos.`);
+    // ❌ ERRO: Sem análise do GPT-4o - usar fallbacks básicos
+    console.error(`❌ Nenhuma análise real do GPT-4o disponível. Usando fallbacks básicos.`);
     summary = getSummaryByScore(overallScore);
     highlights = generateHighlights(overallScore);
     improvements = generateImprovements(overallScore);

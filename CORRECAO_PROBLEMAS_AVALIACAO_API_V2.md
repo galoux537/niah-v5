@@ -8,7 +8,7 @@
 
 ### 2. **Resumos genéricos e não específicos**
 **Problema**: Os resumos não eram específicos ao conteúdo da ligação
-**Causa**: O prompt do GPT-4 não estava exigindo especificidade suficiente nos resumos
+**Causa**: O prompt do GPT-4o não estava exigindo especificidade suficiente nos resumos
 
 ### 3. **Overall score não representava a média dos subcritérios**
 **Problema**: O overall_score era definido primeiro e aplicado a todos os subcritérios
@@ -41,7 +41,7 @@ overallScore = calculatedOverall; // Atualizar o overall score
 ```
 
 ### 3. **Prompt melhorado para resumos específicos**
-Adicionadas instruções específicas no prompt do GPT-4:
+Adicionadas instruções específicas no prompt do GPT-4o:
 
 ```javascript
 🎯 INSTRUÇÕES ESPECÍFICAS PARA SUMMARY:

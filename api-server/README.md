@@ -131,7 +131,7 @@ Verifica se o servidor está funcionando.
 
 1. **Upload**: Cliente envia áudio + critérios via POST
 2. **Transcrição**: Sistema usa OpenAI Whisper para transcrever
-3. **Análise**: GPT-4 analisa transcrição segundo critérios
+3. **Análise**: GPT-4o analisa transcrição segundo critérios
 4. **Persistência**: Resultado salvo no Supabase
 5. **Webhook**: Resultado enviado para URL fornecida (se informada)
 
@@ -139,7 +139,7 @@ Verifica se o servidor está funcionando.
 
 - **Node.js + Express**: Servidor web
 - **OpenAI Whisper**: Transcrição de áudio
-- **OpenAI GPT-4**: Análise inteligente
+- **OpenAI GPT-4o**: Análise inteligente
 - **Supabase**: Banco de dados
 - **Multer**: Upload de arquivos
 
