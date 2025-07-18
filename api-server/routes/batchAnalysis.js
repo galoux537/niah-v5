@@ -1490,6 +1490,90 @@ async function storeWebhookData(webhookData) {
   }
 }
 
+// Função para limpar transcrições repetitivas
+function cleanRepetitiveTranscription(transcript) {
+  if (!transcript || typeof transcript !== 'string') {
+    return transcript;
+  }
+
+  console.log('🧹 Iniciando limpeza de transcrição repetitiva...');
+  
+  // Dividir em linhas para processar
+  const lines = transcript.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  
+  if (lines.length === 0) {
+    return transcript;
+  }
+
+  // Detectar e remover repetições excessivas
+  const cleanedLines = [];
+  const repetitionThreshold = 3; // Número máximo de repetições consecutivas permitidas
+  
+  for (let i = 0; i < lines.length; i++) {
+    const currentLine = lines[i];
+    let repetitionCount = 0;
+    
+    // Verificar quantas vezes esta linha se repete consecutivamente
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j] === currentLine) {
+        repetitionCount++;
+      } else {
+        break;
+      }
+    }
+    
+    // Se há muitas repetições consecutivas, adicionar apenas uma vez
+    if (repetitionCount > repetitionThreshold) {
+      cleanedLines.push(currentLine);
+      // Pular as repetições excessivas
+      i += repetitionCount;
+      console.log(`🔧 Removidas ${repetitionCount} repetições excessivas da linha: "${currentLine.substring(0, 50)}..."`);
+    } else {
+      cleanedLines.push(currentLine);
+    }
+  }
+
+  // Limpar repetições de palavras dentro da mesma linha
+  const finalLines = cleanedLines.map(line => {
+    // Dividir linha em palavras
+    const words = line.split(' ');
+    const cleanedWords = [];
+    let wordRepetitionCount = 0;
+    let lastWord = '';
+    
+    for (const word of words) {
+      if (word === lastWord) {
+        wordRepetitionCount++;
+        // Permitir no máximo 2 repetições da mesma palavra
+        if (wordRepetitionCount <= 2) {
+          cleanedWords.push(word);
+        }
+      } else {
+        cleanedWords.push(word);
+        wordRepetitionCount = 1;
+        lastWord = word;
+      }
+    }
+    
+    return cleanedWords.join(' ');
+  });
+
+  const cleanedTranscript = finalLines.join('\n');
+  
+  // Log das estatísticas de limpeza
+  const originalLength = transcript.length;
+  const cleanedLength = cleanedTranscript.length;
+  const reduction = originalLength - cleanedLength;
+  
+  if (reduction > 0) {
+    console.log(`✅ Limpeza concluída: ${originalLength} → ${cleanedLength} caracteres (redução de ${reduction} caracteres)`);
+  } else {
+    console.log(`✅ Transcrição limpa: sem repetições excessivas detectadas`);
+  }
+  
+  return cleanedTranscript;
+}
+
 // Transcrição real usando OpenAI Whisper
 async function transcribeAudio(audioBuffer, filename) {
   try {
@@ -1520,7 +1604,12 @@ async function transcribeAudio(audioBuffer, filename) {
     );
 
     console.log(`✅ Transcrição OpenAI concluída para ${filename}`);
-    return response.data;
+    
+    // Aplicar limpeza de repetições
+    const rawTranscription = response.data;
+    const cleanedTranscription = cleanRepetitiveTranscription(rawTranscription);
+    
+    return cleanedTranscription;
   } catch (error) {
     console.error('❌ Erro na transcrição OpenAI:', error.response?.data || error.message);
     throw new Error(`Falha na transcrição do arquivo ${filename}: ${error.message}`);
