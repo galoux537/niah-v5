@@ -513,68 +513,27 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
     
     // Organizar dados por índice
     const organizedData = [];
-    
-    // Verificar se há apenas um arquivo mas múltiplas ligações
-    const hasSingleFile = indexedFiles[0] && !indexedFiles[1];
-    const hasMultipleUrls = Object.keys(indexedUrls).length > 1;
-    const totalLigacoes = Math.max(
-      Object.keys(indexedMetadata).length,
-      Object.keys(indexedPhoneNumbers).length,
-      Object.keys(indexedUrls).length,
-      1 // Mínimo de 1 ligação
+    const maxIndex = Math.max(
+      Math.max(...Object.keys(indexedFiles).map(Number), -1),
+      Math.max(...Object.keys(indexedMetadata).map(Number), -1),
+      Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
+      Math.max(...Object.keys(indexedUrls).map(Number), -1) // Incluir URLs no cálculo do maxIndex
     );
     
-    console.log(`🔍 Análise de arquivos e URLs:`);
-    console.log(`  - Arquivo único detectado: ${hasSingleFile}`);
-    console.log(`  - URLs múltiplas detectadas: ${hasMultipleUrls}`);
-    console.log(`  - Total de ligações: ${totalLigacoes}`);
-    console.log(`  - Arquivos disponíveis: ${Object.keys(indexedFiles).filter(k => indexedFiles[k]).length}`);
-    console.log(`  - URLs disponíveis: ${Object.keys(indexedUrls).length}`);
+    console.log(`📊 Cálculo do maxIndex:`);
+    console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
+    console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
+    console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
+    console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
+    console.log(`  - maxIndex calculado:`, maxIndex);
     
-    // Se há apenas um arquivo mas múltiplas ligações, reutilizar o arquivo
-    if (hasSingleFile && totalLigacoes > 1 && !hasMultipleUrls) {
-      console.log(`🔄 REUTILIZANDO ARQUIVO: Um arquivo será usado para ${totalLigacoes} ligações`);
-      
-      const sharedFile = indexedFiles[0];
-      
-      // Criar uma ligação para cada metadata/telefone encontrado
-      for (let i = 0; i < totalLigacoes; i++) {
-        const metadata = indexedMetadata[i];
-        const phoneNumber = indexedPhoneNumbers[i];
-        
-        organizedData.push({
-          index: i,
-          file: sharedFile, // Mesmo arquivo para todas
-          metadata: metadata || null,
-          phoneNumber: phoneNumber || null
-        });
-      }
-    } else {
-      // Processamento normal: cada índice tem seu próprio arquivo/URL
-      console.log(`📁 PROCESSAMENTO NORMAL: Cada ligação com seu próprio arquivo/URL`);
-      
-      const maxIndex = Math.max(
-        Math.max(...Object.keys(indexedFiles).map(Number), -1),
-        Math.max(...Object.keys(indexedMetadata).map(Number), -1),
-        Math.max(...Object.keys(indexedPhoneNumbers).map(Number), -1),
-        Math.max(...Object.keys(indexedUrls).map(Number), -1)
-      );
-      
-      console.log(`📊 Cálculo do maxIndex:`);
-      console.log(`  - indexedFiles keys:`, Object.keys(indexedFiles).map(Number));
-      console.log(`  - indexedMetadata keys:`, Object.keys(indexedMetadata).map(Number));
-      console.log(`  - indexedPhoneNumbers keys:`, Object.keys(indexedPhoneNumbers).map(Number));
-      console.log(`  - indexedUrls keys:`, Object.keys(indexedUrls).map(Number));
-      console.log(`  - maxIndex calculado:`, maxIndex);
-      
-      for (let i = 0; i <= maxIndex; i++) {
-        organizedData.push({
-          file: indexedFiles[i] || null, // Pode ser null se o arquivo não chegou
-          metadata: indexedMetadata[i] || null,
-          phoneNumber: indexedPhoneNumbers[i] || null,
-          index: i
-        });
-      }
+    for (let i = 0; i <= maxIndex; i++) {
+      organizedData.push({
+        file: indexedFiles[i] || null, // Pode ser null se o arquivo não chegou
+        metadata: indexedMetadata[i] || null,
+        phoneNumber: indexedPhoneNumbers[i] || null,
+        index: i
+      });
     }
     
     console.log(`📋 organizedData criado:`, organizedData.map(item => ({
@@ -948,6 +907,12 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
             const validationResult = validationResults.find(r => r.index === callData.index);
             const validation = validationResult?.validation;
             
+            // Delay entre processamento de ligações para evitar sobrecarga
+            if (index > 0) {
+              console.log(`⏳ Aguardando 2 segundos antes de processar próxima ligação...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
             try {
               console.log(`📞 Processando ligação ${index + 1}/${organizedData.length}: ${fileNameSafe}`);
               console.log(`📞   Índice original: ${callData.index}`);
@@ -1018,6 +983,9 @@ router.post('/analyze-batch-proxy', verifyJWT, upload.any(), async (req, res) =>
                 
                 // Aplicar máscara do company_id
                 const maskedFailedPayload = await maskCompanyId(callFailedPayload, req.user.company_id);
+                
+                // Aguardar um pouco antes de enviar webhook para evitar rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 await sendWebhook(webhook, maskedFailedPayload);
                 console.log(`❌ Webhook de ligação falhada (validação) enviado: ${fileNameSafe}`);
@@ -1419,6 +1387,9 @@ router.get('/analyze-batch-proxy/test', verifyJWT, (req, res) => {
 const batchJobs = new Map();
 
 // Função para enviar webhook
+// Cache para controlar rate limiting por URL
+const webhookRateLimit = new Map();
+
 async function sendWebhook(url, data) {
   // SEMPRE armazenar no banco, independente da URL
   await storeWebhookData(data);
@@ -1426,6 +1397,27 @@ async function sendWebhook(url, data) {
   if (!url) {
     console.log('⚠️ Webhook URL não fornecida, mas dados armazenados no banco');
     return;
+  }
+  
+  // Rate limiting: máximo 10 webhooks por minuto por URL
+  const now = Date.now();
+  const oneMinute = 60 * 1000;
+  
+  if (!webhookRateLimit.has(url)) {
+    webhookRateLimit.set(url, []);
+  }
+  
+  const webhookHistory = webhookRateLimit.get(url);
+  
+  // Remover webhooks antigos (mais de 1 minuto)
+  const recentWebhooks = webhookHistory.filter(timestamp => now - timestamp < oneMinute);
+  webhookRateLimit.set(url, recentWebhooks);
+  
+  // Verificar se excedeu o limite
+  if (recentWebhooks.length >= 10) {
+    console.warn(`⚠️ Rate limit atingido para ${url}. Aguardando 1 minuto...`);
+    // Aguardar 1 minuto antes de tentar novamente
+    await new Promise(resolve => setTimeout(resolve, oneMinute));
   }
   
   try {
@@ -1442,11 +1434,31 @@ async function sendWebhook(url, data) {
     
     if (response.status >= 200 && response.status < 300) {
       console.log(`✅ Webhook enviado: ${data.event} - Status: ${response.status}`);
+      // Registrar sucesso no rate limiting
+      webhookHistory.push(now);
     } else {
       console.warn(`❌ Webhook failed: ${response.status} ${response.statusText}`);
     }
   } catch (error) {
     console.error('❌ Erro ao enviar webhook:', error.message);
+    
+    // Se for erro 429 (rate limit), aguardar mais tempo
+    if (error.response && error.response.status === 429) {
+      console.warn(`🔄 Rate limit detectado (429). Aguardando 2 minutos...`);
+      await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000));
+      
+      // Tentar novamente uma vez
+      try {
+        const retryResponse = await axios.post(url, data, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 10000
+        });
+        console.log(`✅ Webhook retry enviado: ${data.event} - Status: ${retryResponse.status}`);
+        webhookHistory.push(now);
+      } catch (retryError) {
+        console.error('❌ Retry também falhou:', retryError.message);
+      }
+    }
     // Não throw para não quebrar o processamento
   }
 }
